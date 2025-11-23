@@ -1,6 +1,15 @@
 import { create } from "zustand";
-import { supabase } from "../lib/supabase";
-import type { Five, FiveParticipant, FiveWithDetails } from "../types/database";
+import type { Five, FiveWithDetails } from "../types/database";
+import {
+  createFive as svcCreateFive,
+  deleteFive as svcDeleteFive,
+  fetchFiveByShareCode as svcFetchFiveByShareCode,
+  fetchFiveParticipants as svcFetchFiveParticipants,
+  fetchFivesForUser,
+  joinFive as svcJoinFive,
+  updateFive as svcUpdateFive,
+  leaveFive as svcLeaveFive,
+} from "../services/fiveService";
 
 interface FiveParticipantWithUser {
   id: string;
@@ -59,24 +68,7 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
 
   fetchFiveParticipants: async (fiveId) => {
     try {
-      const { data: participants, error } = await supabase
-        .from("five_participants")
-        .select(`
-          id,
-          user_id,
-          joined_at,
-          user:users (
-            id,
-            first_name,
-            last_name,
-            email
-          )
-        `)
-        .eq("five_id", fiveId)
-        .order("joined_at", { ascending: true });
-
-      if (error) throw error;
-
+      const participants = await svcFetchFiveParticipants(fiveId);
       set({ participants: (participants as unknown as FiveParticipantWithUser[]) || [] });
     } catch (error) {
       console.error("Error fetching five participants:", error);
@@ -88,61 +80,7 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
   fetchMyFives: async (userId) => {
     set({ loading: true });
     try {
-      // Get fives created by user
-      const { data: createdFives, error: createdError } = await supabase
-        .from("fives")
-        .select("*")
-        .eq("created_by", userId)
-        .order("date", { ascending: true });
-
-      if (createdError) throw createdError;
-
-      // Get fives user has joined
-      const { data: joinedFivesData, error: joinedError } = await supabase
-        .from("five_participants")
-        .select(`
-          five:fives (*)
-        `)
-        .eq("user_id", userId);
-
-      if (joinedError) throw joinedError;
-
-      const joinedFivesRaw = joinedFivesData as unknown as ({ five: Five | null } & FiveParticipant)[] | null;
-      const joinedFives =
-        joinedFivesRaw?.map((item) => item.five).filter((f): f is Five => Boolean(f)) || [];
-
-      // Combine and remove duplicates
-      const allFivesMap = new Map();
-      [...(createdFives || []), ...joinedFives].forEach(five => {
-        if (five) allFivesMap.set(five.id, five);
-      });
-      const allFives = Array.from(allFivesMap.values());
-
-      // Add participant count and user participation status
-      const fivesWithDetails = await Promise.all(
-        allFives.map(async (five) => {
-          const { count } = await supabase
-            .from("five_participants")
-            .select("*", { count: "exact", head: true })
-            .eq("five_id", five.id);
-
-          const { data: participation } = await supabase
-            .from("five_participants")
-            .select("*")
-            .eq("five_id", five.id)
-            .eq("user_id", userId)
-            .maybeSingle();
-
-          return {
-            ...five,
-            participantCount: count || 0,
-            isUserParticipant: !!participation,
-            isFull: (count || 0) >= five.max_players,
-            isCreator: five.created_by === userId,
-          };
-        })
-      );
-
+      const fivesWithDetails = await fetchFivesForUser(userId);
       set({ fives: fivesWithDetails, loading: false });
     } catch (error) {
       console.error("Error fetching fives:", error);
@@ -152,35 +90,7 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
 
   fetchFiveByShareCode: async (shareCode, userId) => {
     try {
-      const { data: five, error } = await supabase
-        .from("fives")
-        .select("*")
-        .eq("share_code", shareCode.toUpperCase())
-        .single();
-
-      if (error) throw error;
-      if (!five) return null;
-
-      // Add participant details
-      const { count } = await supabase
-        .from("five_participants")
-        .select("*", { count: "exact", head: true })
-        .eq("five_id", five.id);
-
-      const { data: participation } = await supabase
-        .from("five_participants")
-        .select("*")
-        .eq("five_id", five.id)
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      return {
-        ...five,
-        participantCount: count || 0,
-        isUserParticipant: !!participation,
-        isFull: (count || 0) >= five.max_players,
-        isCreator: five.created_by === userId,
-      };
+      return await svcFetchFiveByShareCode(shareCode, userId);
     } catch (error) {
       console.error("Error fetching five by share code:", error);
       return null;
@@ -196,34 +106,20 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
     userId
   ) => {
     try {
-      const { data: five, error } = await supabase
-        .from("fives")
-        .insert({
-          group_id: null, // No group needed
-          title,
-          location,
-          date,
-          max_players: maxPlayers,
-          duration_minutes: durationMinutes,
-          created_by: userId,
-        })
-        .select()
-        .single();
+      const five = await svcCreateFive({
+        group_id: null,
+        title,
+        location,
+        date,
+        max_players: maxPlayers,
+        duration_minutes: durationMinutes,
+        created_by: userId,
+      } as Five);
 
-      if (error) throw error;
-
-      // Automatically join the creator to the five
-      await supabase
-        .from("five_participants")
-        .insert({
-          five_id: five.id,
-          user_id: userId,
-        });
-
-      // Refresh fives
+      await svcJoinFive(five.id, userId);
       await get().fetchMyFives(userId);
 
-      return { five, shareCode: five.share_code };
+      return { five, shareCode: (five as Five).share_code };
     } catch (error) {
       console.error("Error creating five:", error);
       return null;
@@ -232,55 +128,22 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
 
   updateFive: async (fiveId, payload, userId) => {
     try {
-      const { data: existing, error: fetchError } = await supabase
-        .from("fives")
-        .select("created_by")
-        .eq("id", fiveId)
-        .single();
-
-      if (fetchError) throw fetchError;
-      if (!existing) throw new Error("Match introuvable");
-      if (existing.created_by !== userId) throw new Error("Non autorisé");
-
-      const { data: updated, error: updateError } = await supabase
-        .from("fives")
-        .update({
+      const updated = await svcUpdateFive(
+        fiveId,
+        {
           title: payload.title,
           location: payload.location,
           date: payload.date,
           max_players: payload.maxPlayers,
           duration_minutes: payload.durationMinutes,
-        })
-        .eq("id", fiveId)
-        .select()
-        .single();
-
-      if (updateError) throw updateError;
+        } as Partial<Five>,
+        userId
+      );
 
       await get().fetchMyFives(userId);
 
       if (!updated) return null;
-
-      // Rebuild details for return
-      const { count } = await supabase
-        .from("five_participants")
-        .select("*", { count: "exact", head: true })
-        .eq("five_id", fiveId);
-
-      const { data: participation } = await supabase
-        .from("five_participants")
-        .select("*")
-        .eq("five_id", fiveId)
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      return {
-        ...updated,
-        participantCount: count || 0,
-        isUserParticipant: !!participation,
-        isFull: (count || 0) >= updated.max_players,
-        isCreator: updated.created_by === userId,
-      };
+      return await svcFetchFiveByShareCode(updated.share_code, userId);
     } catch (error) {
       console.error("Error updating five:", error);
       return null;
@@ -289,37 +152,8 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
 
   joinFive: async (fiveId, userId) => {
     try {
-      // Check if five is full
-      const { data: five, error: fiveError } = await supabase
-        .from("fives")
-        .select("*")
-        .eq("id", fiveId)
-        .single();
-
-      if (fiveError) throw fiveError;
-
-      const { count } = await supabase
-        .from("five_participants")
-        .select("*", { count: "exact", head: true })
-        .eq("five_id", fiveId);
-
-      if ((count || 0) >= five.max_players) {
-        throw new Error("Five is full");
-      }
-
-      // Join five
-      const { error: joinError } = await supabase
-        .from("five_participants")
-        .insert({
-          five_id: fiveId,
-          user_id: userId,
-        });
-
-      if (joinError) throw joinError;
-
-      // Refresh fives
+      await svcJoinFive(fiveId, userId);
       await get().fetchMyFives(userId);
-
       return true;
     } catch (error) {
       console.error("Error joining five:", error);
@@ -352,15 +186,7 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
 
   leaveFive: async (fiveId, userId) => {
     try {
-      const { error } = await supabase
-        .from("five_participants")
-        .delete()
-        .eq("five_id", fiveId)
-        .eq("user_id", userId);
-
-      if (error) throw error;
-
-      // Refresh fives
+      await svcLeaveFive(fiveId, userId);
       await get().fetchMyFives(userId);
 
       return true;
@@ -372,29 +198,7 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
 
   deleteFive: async (fiveId, userId) => {
     try {
-      // Verify user is the creator
-      const { data: five, error: fiveError } = await supabase
-        .from("fives")
-        .select("created_by")
-        .eq("id", fiveId)
-        .single();
-
-      if (fiveError) throw fiveError;
-      if (!five) throw new Error("Five not found");
-
-      if (five.created_by !== userId) {
-        throw new Error("Only the creator can delete this match");
-      }
-
-      // Delete the five (cascade will handle participants)
-      const { error: deleteError } = await supabase
-        .from("fives")
-        .delete()
-        .eq("id", fiveId);
-
-      if (deleteError) throw deleteError;
-
-      // Refresh fives
+      await svcDeleteFive(fiveId, userId);
       await get().fetchMyFives(userId);
 
       return true;

@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { useFiveStore } from '../stores/useFiveStore';
 import { useUserStore } from '../stores/useUserStore';
 import { Layout } from '../components/Layout';
+import { buildShareLink, formatDate, formatDateForInput, formatDuration } from '../utils/format';
 
 export function Fives() {
   const {
@@ -175,9 +176,6 @@ export function Fives() {
     toast.success('Code copié !');
   };
 
-  const buildShareLink = (shareCode: string) =>
-    `${window.location.origin}/fives?shareCode=${shareCode}`;
-
   const handleCopyShareLink = (shareCode: string) => {
     navigator.clipboard.writeText(buildShareLink(shareCode));
     toast.success('Lien copié !');
@@ -218,32 +216,6 @@ export function Fives() {
     } finally {
       setIsUpdating(false);
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('fr-FR', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date);
-  };
-
-  const formatDateForInput = (dateString: string) => {
-    const date = new Date(dateString);
-    const tzOffset = date.getTimezoneOffset() * 60000;
-    return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
-  };
-
-  const formatDuration = (minutes: number | null | undefined) => {
-    if (!minutes) return 'Durée non définie';
-    const hrs = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hrs === 0) return `${mins} min`;
-    if (mins === 0) return `${hrs} h`;
-    return `${hrs} h ${mins} min`;
   };
 
   const isFivePast = (dateString: string) => {
