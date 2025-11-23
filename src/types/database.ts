@@ -102,6 +102,7 @@ export interface Database {
           max_players: number;
           created_by: string;
           share_code: string;
+          duration_minutes: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -115,6 +116,7 @@ export interface Database {
           max_players?: number;
           created_by: string;
           share_code?: string;
+          duration_minutes?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -128,6 +130,7 @@ export interface Database {
           max_players?: number;
           created_by?: string;
           share_code?: string;
+          duration_minutes?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -153,6 +156,10 @@ export interface Database {
         };
       };
     };
+    Views: {};
+    Functions: {};
+    Enums: {};
+    CompositeTypes: {};
   };
 }
 

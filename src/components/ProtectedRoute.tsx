@@ -1,8 +1,9 @@
 import { useAuth } from '@clerk/clerk-react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useAuth();
+  const location = useLocation();
 
   if (!isLoaded) {
     return (
@@ -13,7 +14,11 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!isSignedIn) {
-    return <Navigate to="/sign-in" replace />;
+    const redirectPath = `${location.pathname}${location.search}`;
+    const signInPath = redirectPath
+      ? `/sign-in?redirect=${encodeURIComponent(redirectPath)}`
+      : '/sign-in';
+    return <Navigate to={signInPath} replace />;
   }
 
   return <>{children}</>;

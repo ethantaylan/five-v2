@@ -1,6 +1,12 @@
 import { SignUp as ClerkSignUp } from '@clerk/clerk-react';
+import { useLocation } from 'react-router-dom';
 
 export function SignUp() {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const redirect = searchParams.get('redirect') || '/fives';
+  const encodedRedirect = encodeURIComponent(redirect);
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4">
       <div className="mb-8 text-center">
@@ -11,8 +17,8 @@ export function SignUp() {
             </svg>
           </div>
         </div>
-        <h1 className="text-3xl font-bold text-white">Football 5c5</h1>
-        <p className="mt-2 text-slate-400">Créez votre compte pour commencer</p>
+        <h1 className="text-3xl font-bold text-white">Strive</h1>
+        <p className="mt-2 text-slate-400">Créez votre compte pour organiser tous vos événements</p>
       </div>
       <ClerkSignUp
         appearance={{
@@ -23,8 +29,8 @@ export function SignUp() {
         }}
         routing="path"
         path="/sign-up"
-        signInUrl="/sign-in"
-        afterSignUpUrl="/groups"
+        signInUrl={`/sign-in?redirect=${encodedRedirect}`}
+        afterSignUpUrl={redirect}
       />
     </div>
   );

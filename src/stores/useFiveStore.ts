@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "../lib/supabase";
-import type { FiveWithDetails } from "../types/database";
+import type { Five, FiveParticipant, FiveWithDetails } from "../types/database";
 
 interface FiveParticipantWithUser {
   id: string;
@@ -24,14 +24,28 @@ interface FiveStore {
   fetchFiveParticipants: (fiveId: string) => Promise<void>;
   createFive: (
     title: string,
-    description: string,
     location: string,
     date: string,
     maxPlayers: number,
+    durationMinutes: number,
     userId: string
   ) => Promise<{ five: any; shareCode: string } | null>;
+  updateFive: (
+    fiveId: string,
+    payload: {
+      title: string;
+      location: string;
+      date: string;
+      maxPlayers: number;
+      durationMinutes: number;
+    },
+    userId: string
+  ) => Promise<FiveWithDetails | null>;
   joinFive: (fiveId: string, userId: string) => Promise<boolean>;
-  joinFiveByShareCode: (shareCode: string, userId: string) => Promise<boolean>;
+  joinFiveByShareCode: (
+    shareCode: string,
+    userId: string
+  ) => Promise<"joined" | "already" | "full" | "notFound" | "error">;
   leaveFive: (fiveId: string, userId: string) => Promise<boolean>;
   deleteFive: (fiveId: string, userId: string) => Promise<boolean>;
   setCurrentFive: (five: FiveWithDetails | null) => void;
@@ -63,7 +77,7 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
 
       if (error) throw error;
 
-      set({ participants: participants || [] });
+      set({ participants: (participants as unknown as FiveParticipantWithUser[]) || [] });
     } catch (error) {
       console.error("Error fetching five participants:", error);
       set({ participants: [] });
@@ -93,7 +107,9 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
 
       if (joinedError) throw joinedError;
 
-      const joinedFives = joinedFivesData?.map(item => item.five).filter(Boolean) || [];
+      const joinedFivesRaw = joinedFivesData as unknown as ({ five: Five | null } & FiveParticipant)[] | null;
+      const joinedFives =
+        joinedFivesRaw?.map((item) => item.five).filter((f): f is Five => Boolean(f)) || [];
 
       // Combine and remove duplicates
       const allFivesMap = new Map();
@@ -173,10 +189,10 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
 
   createFive: async (
     title,
-    description,
     location,
     date,
     maxPlayers,
+    durationMinutes,
     userId
   ) => {
     try {
@@ -185,10 +201,10 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
         .insert({
           group_id: null, // No group needed
           title,
-          description,
           location,
           date,
           max_players: maxPlayers,
+          duration_minutes: durationMinutes,
           created_by: userId,
         })
         .select()
@@ -210,6 +226,63 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
       return { five, shareCode: five.share_code };
     } catch (error) {
       console.error("Error creating five:", error);
+      return null;
+    }
+  },
+
+  updateFive: async (fiveId, payload, userId) => {
+    try {
+      const { data: existing, error: fetchError } = await supabase
+        .from("fives")
+        .select("created_by")
+        .eq("id", fiveId)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!existing) throw new Error("Match introuvable");
+      if (existing.created_by !== userId) throw new Error("Non autorisé");
+
+      const { data: updated, error: updateError } = await supabase
+        .from("fives")
+        .update({
+          title: payload.title,
+          location: payload.location,
+          date: payload.date,
+          max_players: payload.maxPlayers,
+          duration_minutes: payload.durationMinutes,
+        })
+        .eq("id", fiveId)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+
+      await get().fetchMyFives(userId);
+
+      if (!updated) return null;
+
+      // Rebuild details for return
+      const { count } = await supabase
+        .from("five_participants")
+        .select("*", { count: "exact", head: true })
+        .eq("five_id", fiveId);
+
+      const { data: participation } = await supabase
+        .from("five_participants")
+        .select("*")
+        .eq("five_id", fiveId)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      return {
+        ...updated,
+        participantCount: count || 0,
+        isUserParticipant: !!participation,
+        isFull: (count || 0) >= updated.max_players,
+        isCreator: updated.created_by === userId,
+      };
+    } catch (error) {
+      console.error("Error updating five:", error);
       return null;
     }
   },
@@ -258,17 +331,22 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
     try {
       const five = await get().fetchFiveByShareCode(shareCode, userId);
       if (!five) {
-        throw new Error("Match non trouvé");
+        return "notFound";
       }
 
       if (five.isUserParticipant) {
-        throw new Error("Vous êtes déjà inscrit à ce match");
+        return "already";
       }
 
-      return await get().joinFive(five.id, userId);
+      if (five.isFull) {
+        return "full";
+      }
+
+      const joined = await get().joinFive(five.id, userId);
+      return joined ? "joined" : "error";
     } catch (error) {
       console.error("Error joining five by share code:", error);
-      return false;
+      return "error";
     }
   },
 

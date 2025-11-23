@@ -29,12 +29,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="mx-auto max-w-7xl px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-600">
-                <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10" />
-                </svg>
-              </div>
-              <span className="text-xl font-bold text-white">MatchUp</span>
+              <img
+                src="/strive-logo.svg"
+                alt="Strive"
+                className="h-10 w-10 rounded-xl bg-slate-900 object-contain"
+                draggable={false}
+              />
+              <span className="text-xl font-bold text-white">Strive</span>
             </div>
             <UserButton afterSignOutUrl="/sign-in" />
           </div>

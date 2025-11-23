@@ -29,7 +29,7 @@ export function Landing() {
                   />
                 </svg>
               </div>
-              <span className="text-xl font-semibold text-white">MatchUp</span>
+              <span className="text-xl font-semibold text-white">Strive</span>
             </div>
 
             {/* Auth Buttons */}
@@ -322,10 +322,10 @@ export function Landing() {
                   />
                 </svg>
               </div>
-              <span className="font-semibold text-white">MatchUp</span>
+              <span className="font-semibold text-white">Strive</span>
             </div>
             <p className="text-sm text-slate-500">
-              © {new Date().getFullYear()} MatchUp. Tous droits réservés.
+              © {new Date().getFullYear()} Strive. Tous droits réservés.
             </p>
           </div>
         </div>

@@ -1,26 +1,52 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useFiveStore } from '../stores/useFiveStore';
 import { useUserStore } from '../stores/useUserStore';
 import { Layout } from '../components/Layout';
 
 export function Fives() {
-  const { fives, loading, fetchMyFives, createFive, joinFive, leaveFive, deleteFive, fetchFiveParticipants, participants, joinFiveByShareCode } = useFiveStore();
+  const {
+    fives,
+    loading,
+    fetchMyFives,
+    createFive,
+    updateFive,
+    joinFive,
+    leaveFive,
+    deleteFive,
+    fetchFiveParticipants,
+    participants,
+    joinFiveByShareCode,
+  } = useFiveStore();
   const { user } = useUserStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [fiveToLeave, setFiveToLeave] = useState<typeof fives[0] | null>(null);
   const [fiveToDelete, setFiveToDelete] = useState<typeof fives[0] | null>(null);
   const [fiveToShare, setFiveToShare] = useState<typeof fives[0] | null>(null);
+  const [fiveToEdit, setFiveToEdit] = useState<typeof fives[0] | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [selectedFive, setSelectedFive] = useState<typeof fives[0] | null>(null);
   const [joinCode, setJoinCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
+  const [createDuration, setCreateDuration] = useState(60);
+  const [editDuration, setEditDuration] = useState(60);
+  const lastAutoJoinCode = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (fiveToEdit) {
+      setEditDuration(fiveToEdit.duration_minutes || 60);
+    }
+  }, [fiveToEdit]);
 
   useEffect(() => {
     if (user) {
@@ -34,23 +60,23 @@ export function Fives() {
 
     const formData = new FormData(e.currentTarget);
     const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
     const location = formData.get('location') as string;
     const date = formData.get('date') as string;
     const maxPlayers = parseInt(formData.get('maxPlayers') as string) || 10;
 
     const result = await createFive(
       title,
-      description,
       location,
       date,
       maxPlayers,
+      createDuration,
       user.id
     );
 
     if (result) {
       toast.success('Match créé avec succès !');
       setShowCreateModal(false);
+      setCreateDuration(60);
       // Show share code
       setFiveToShare({ ...result.five, share_code: result.shareCode } as any);
       setShowShareModal(true);
@@ -65,13 +91,21 @@ export function Fives() {
 
     setIsJoining(true);
     try {
-      const success = await joinFiveByShareCode(joinCode.trim().toUpperCase(), user.id);
-      if (success) {
+      const status = await joinFiveByShareCode(joinCode.trim().toUpperCase(), user.id);
+      if (status === 'joined') {
         toast.success('Vous avez rejoint le match !');
         setShowJoinModal(false);
         setJoinCode('');
+      } else if (status === 'already') {
+        toast.info('Vous êtes déjà inscrit à ce match');
+        setShowJoinModal(false);
+        setJoinCode('');
+      } else if (status === 'full') {
+        toast.error('Ce match est complet');
+      } else if (status === 'notFound') {
+        toast.error('Code invalide');
       } else {
-        toast.error('Code invalide ou match complet');
+        toast.error('Erreur lors de la tentative de rejoindre le match');
       }
     } finally {
       setIsJoining(false);
@@ -141,6 +175,51 @@ export function Fives() {
     toast.success('Code copié !');
   };
 
+  const buildShareLink = (shareCode: string) =>
+    `${window.location.origin}/fives?shareCode=${shareCode}`;
+
+  const handleCopyShareLink = (shareCode: string) => {
+    navigator.clipboard.writeText(buildShareLink(shareCode));
+    toast.success('Lien copié !');
+  };
+
+  const handleEditFive = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user || !fiveToEdit || isUpdating) return;
+
+    const formData = new FormData(e.currentTarget);
+    const title = formData.get('title') as string;
+    const location = formData.get('location') as string;
+    const date = formData.get('date') as string;
+    const maxPlayers = parseInt(formData.get('maxPlayers') as string) || fiveToEdit.max_players;
+
+    setIsUpdating(true);
+    try {
+      const updated = await updateFive(
+        fiveToEdit.id,
+        {
+          title,
+          location,
+          date,
+          maxPlayers,
+          durationMinutes: editDuration,
+        },
+        user.id
+      );
+
+      if (updated) {
+        toast.success('Match mis à jour');
+        setShowEditModal(false);
+        setFiveToEdit(null);
+        setSelectedFive((prev) => (prev && prev.id === updated.id ? { ...prev, ...updated } : prev));
+      } else {
+        toast.error("Erreur lors de la mise à jour du match");
+      }
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('fr-FR', {
@@ -150,6 +229,21 @@ export function Fives() {
       hour: '2-digit',
       minute: '2-digit',
     }).format(date);
+  };
+
+  const formatDateForInput = (dateString: string) => {
+    const date = new Date(dateString);
+    const tzOffset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
+  };
+
+  const formatDuration = (minutes: number | null | undefined) => {
+    if (!minutes) return 'Durée non définie';
+    const hrs = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hrs === 0) return `${mins} min`;
+    if (mins === 0) return `${hrs} h`;
+    return `${hrs} h ${mins} min`;
   };
 
   const isFivePast = (dateString: string) => {
@@ -168,6 +262,38 @@ export function Fives() {
 
     return new Date(a.date).getTime() - new Date(b.date).getTime();
   });
+
+  // Auto-join when arriving with a share link (?shareCode=XXXXXX)
+  useEffect(() => {
+    if (!user) return;
+    const shareCodeParam = searchParams.get('shareCode');
+    if (!shareCodeParam) return;
+
+    const normalizedCode = shareCodeParam.toUpperCase();
+    if (lastAutoJoinCode.current === normalizedCode) return;
+    lastAutoJoinCode.current = normalizedCode;
+
+    const attemptJoin = async () => {
+      const status = await joinFiveByShareCode(normalizedCode, user.id);
+      if (status === 'joined') {
+        toast.success('Vous avez rejoint le match via le lien !');
+        const params = new URLSearchParams(searchParams);
+        params.delete('shareCode');
+        setSearchParams(params, { replace: true });
+      } else if (status === 'already') {
+        toast.info('Vous participez déjà à ce match');
+        const params = new URLSearchParams(searchParams);
+        params.delete('shareCode');
+        setSearchParams(params, { replace: true });
+      } else if (status === 'full') {
+        toast.error('Ce match est complet');
+      } else {
+        toast.error('Lien invalide ou erreur de connexion au match');
+      }
+    };
+
+    attemptJoin();
+  }, [joinFiveByShareCode, searchParams, setSearchParams, user]);
 
   return (
     <Layout>
@@ -231,28 +357,25 @@ export function Fives() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-white">{five.title}</h3>
-                      {five.isCreator && (
-                        <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">
-                          Créateur
-                        </span>
-                      )}
-                      {isPast && (
-                        <span className="rounded-full bg-slate-700/50 px-2 py-0.5 text-xs text-slate-400">
-                          Terminé
-                        </span>
-                      )}
-                    </div>
-                    {five.description && (
-                      <p className="mt-1 text-sm text-slate-400">{five.description}</p>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-white">{five.title}</h3>
+                    {five.isCreator && (
+                      <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">
+                        Créateur
+                      </span>
                     )}
+                    {isPast && (
+                      <span className="rounded-full bg-slate-700/50 px-2 py-0.5 text-xs text-slate-400">
+                        Terminé
+                      </span>
+                    )}
+                  </div>
                     <div className="mt-3 space-y-1 text-sm text-slate-500">
-                      <div className="flex items-center gap-2">
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                  <div className="flex items-center gap-2">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                             strokeWidth={2}
                             d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                           />
@@ -273,16 +396,22 @@ export function Fives() {
                               strokeLinejoin="round"
                               strokeWidth={2}
                               d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                          </svg>
-                          <span>{five.location}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        <span>{five.location}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>{formatDuration(five.duration_minutes)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
                             strokeWidth={2}
                             d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                           />
@@ -295,16 +424,28 @@ export function Fives() {
                   </div>
                   <div className="flex flex-col gap-2">
                     {!isPast && five.isCreator && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setFiveToShare(five);
-                          setShowShareModal(true);
-                        }}
-                        className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800"
-                      >
-                        Partager
-                      </button>
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFiveToEdit(five);
+                            setShowEditModal(true);
+                          }}
+                          className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800"
+                        >
+                          Modifier
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFiveToShare(five);
+                            setShowShareModal(true);
+                          }}
+                          className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800"
+                        >
+                          Partager
+                        </button>
+                      </>
                     )}
                     {isPast ? (
                       <button
@@ -367,15 +508,6 @@ export function Fives() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm text-slate-400">Description</label>
-                  <textarea
-                    name="description"
-                    rows={2}
-                    placeholder="Match entre amis..."
-                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
-                  />
-                </div>
-                <div>
                   <label className="mb-1 block text-sm text-slate-400">Lieu</label>
                   <input
                     type="text"
@@ -393,6 +525,26 @@ export function Fives() {
                     required
                     className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
                   />
+                </div>
+                <div>
+                  <div className="mb-1 flex items-center justify-between text-sm text-slate-400">
+                    <label>Durée (minutes)</label>
+                    <span className="text-white">{createDuration} min</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={30}
+                    max={120}
+                    step={15}
+                    value={createDuration}
+                    onChange={(e) => setCreateDuration(parseInt(e.target.value))}
+                    className="w-full accent-red-500"
+                  />
+                  <div className="mt-1 flex justify-between text-xs text-slate-500">
+                    <span>30m</span>
+                    <span>1h</span>
+                    <span>2h</span>
+                  </div>
                 </div>
                 <div>
                   <label className="mb-1 block text-sm text-slate-400">Nombre de joueurs max</label>
@@ -440,7 +592,7 @@ export function Fives() {
                     placeholder="Entrez le code à 8 caractères"
                     maxLength={8}
                     required
-                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-center text-2xl font-mono uppercase tracking-widest text-white focus:border-red-500 focus:outline-none"
+                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-center font-mono uppercase tracking-widest text-white focus:border-red-500 focus:outline-none"
                   />
                   <p className="mt-2 text-xs text-slate-500">
                     Demandez le code au créateur du match
@@ -464,6 +616,98 @@ export function Fives() {
                     className="flex-1 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isJoining ? 'Rejoindre...' : 'Rejoindre'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Modal */}
+        {showEditModal && fiveToEdit && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div className="w-full max-w-md rounded-lg border border-white/10 bg-slate-900 p-6">
+              <h2 className="mb-4 text-xl font-bold text-white">Modifier le match</h2>
+              <form onSubmit={handleEditFive} className="space-y-4">
+                <div>
+                  <label className="mb-1 block text-sm text-slate-400">Titre</label>
+                  <input
+                    type="text"
+                    name="title"
+                    required
+                    defaultValue={fiveToEdit.title}
+                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm text-slate-400">Lieu</label>
+                  <input
+                    type="text"
+                    name="location"
+                    required
+                    defaultValue={fiveToEdit.location || ''}
+                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm text-slate-400">Date et heure</label>
+                  <input
+                    type="datetime-local"
+                    name="date"
+                    required
+                    defaultValue={formatDateForInput(fiveToEdit.date)}
+                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <div className="mb-1 flex items-center justify-between text-sm text-slate-400">
+                    <label>Durée (minutes)</label>
+                    <span className="text-white">{editDuration} min</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={30}
+                    max={120}
+                    step={15}
+                    value={editDuration}
+                    onChange={(e) => setEditDuration(parseInt(e.target.value))}
+                    className="w-full accent-red-500"
+                  />
+                  <div className="mt-1 flex justify-between text-xs text-slate-500">
+                    <span>30m</span>
+                    <span>1h</span>
+                    <span>2h</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm text-slate-400">Nombre de joueurs max</label>
+                  <input
+                    type="number"
+                    name="maxPlayers"
+                    min={2}
+                    max={20}
+                    defaultValue={fiveToEdit.max_players}
+                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setFiveToEdit(null);
+                    }}
+                    disabled={isUpdating}
+                    className="flex-1 rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isUpdating}
+                    className="flex-1 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50"
+                  >
+                    {isUpdating ? 'Enregistrement...' : 'Enregistrer'}
                   </button>
                 </div>
               </form>
@@ -501,6 +745,22 @@ export function Fives() {
                 </button>
               </div>
 
+              <div className="mb-6 rounded-lg border border-white/10 bg-slate-800/60 p-4">
+                <p className="mb-2 text-sm font-semibold text-white">Lien direct</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 overflow-hidden rounded-lg bg-slate-900/70 px-3 py-2 text-xs text-slate-300">
+                    <span className="block truncate">{buildShareLink(fiveToShare.share_code)}</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopyShareLink(fiveToShare.share_code)}
+                    className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800"
+                  >
+                    Copier
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-slate-500">Toute personne connectée avec ce lien rejoindra automatiquement le match.</p>
+              </div>
+
               <div className="space-y-2 rounded-lg border border-white/10 bg-slate-800/50 p-4">
                 <p className="text-sm font-semibold text-white">{fiveToShare.title}</p>
                 <div className="flex items-center gap-2 text-xs text-slate-400">
@@ -518,6 +778,12 @@ export function Fives() {
                     <span>{fiveToShare.location}</span>
                   </div>
                 )}
+                <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>{formatDuration(fiveToShare.duration_minutes)}</span>
+                </div>
               </div>
 
               <button
@@ -552,9 +818,6 @@ export function Fives() {
                       </span>
                     )}
                   </div>
-                  {selectedFive.description && (
-                    <p className="mt-1 text-sm text-slate-400">{selectedFive.description}</p>
-                  )}
                 </div>
                 <button
                   onClick={() => setShowDetailsModal(false)}
@@ -573,6 +836,12 @@ export function Fives() {
                   </svg>
                   <span>{formatDate(selectedFive.date)}</span>
                 </div>
+                <div className="flex items-center gap-2 text-sm text-slate-400">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>{formatDuration(selectedFive.duration_minutes)}</span>
+                </div>
                 {selectedFive.location && (
                   <div className="flex items-center gap-2 text-sm text-slate-400">
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -583,19 +852,32 @@ export function Fives() {
                   </div>
                 )}
                 {selectedFive.isCreator && (
-                  <div className="flex items-center justify-between rounded-lg bg-slate-800/50 p-3">
-                    <div className="flex items-center gap-2 text-sm text-slate-400">
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                      </svg>
-                      <span className="font-mono font-semibold text-red-400">{selectedFive.share_code}</span>
+                  <div className="space-y-2 rounded-lg bg-slate-800/50 p-3">
+                    <div className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-slate-900/60 px-3 py-2">
+                      <div className="flex items-center gap-2 text-sm text-slate-300">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                        </svg>
+                        <span className="font-mono font-semibold text-red-400">{selectedFive.share_code}</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyShareCode(selectedFive.share_code)}
+                        className="rounded-lg border border-white/10 bg-slate-800 px-3 py-1 text-xs font-medium text-white hover:bg-slate-700"
+                      >
+                        Copier
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleCopyShareCode(selectedFive.share_code)}
-                      className="text-xs text-slate-400 hover:text-white"
-                    >
-                      Copier
-                    </button>
+                    <div className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-slate-900/60 px-3 py-2">
+                      <div className="flex-1 overflow-hidden text-xs text-slate-300">
+                        <span className="block truncate">{buildShareLink(selectedFive.share_code)}</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyShareLink(selectedFive.share_code)}
+                        className="rounded-lg border border-white/10 bg-slate-800 px-3 py-1 text-xs font-medium text-white hover:bg-slate-700"
+                      >
+                        Copier
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -658,12 +940,12 @@ export function Fives() {
                       <>
                         <button
                           onClick={() => {
-                            setFiveToShare(selectedFive);
-                            setShowShareModal(true);
+                            setFiveToEdit(selectedFive);
+                            setShowEditModal(true);
                           }}
                           className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
                         >
-                          Partager le code
+                          Modifier
                         </button>
                         <button
                           onClick={() => {

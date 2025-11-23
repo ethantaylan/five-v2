@@ -35,13 +35,13 @@ export function Footer() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-white">MatchUp</h3>
-                  <p className="text-sm text-slate-400">Organisez vos matchs</p>
+                  <h3 className="text-2xl font-bold text-white">Strive</h3>
+                  <p className="text-sm text-slate-400">Organisez vos événements</p>
                 </div>
               </div>
               <p className="max-w-md text-sm leading-relaxed text-slate-400">
-                La plateforme ultime pour organiser vos matchs de football 5c5 et padel 2c2.
-                Créez des groupes, planifiez des matchs et jouez avec vos amis en toute simplicité.
+                La plateforme pour planifier n'importe quel événement : sport, sorties, réunions ou ateliers.
+                Créez des groupes, planifiez vos sessions et partagez-les en un clic.
               </p>
             </motion.div>
           </div>
@@ -160,7 +160,7 @@ export function Footer() {
         >
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <p className="text-sm text-slate-500">
-              © {currentYear} MatchUp. Tous droits réservés.
+              © {currentYear} Strive. Tous droits réservés.
             </p>
             <div className="flex gap-6 text-sm text-slate-500">
               <a href="#" className="transition-colors hover:text-red-400">

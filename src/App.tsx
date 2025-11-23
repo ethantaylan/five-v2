@@ -1,11 +1,10 @@
 import { ClerkProvider, SignedIn, SignedOut } from '@clerk/clerk-react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Fives } from './pages/Fives';
-import { Landing } from './pages/Landing';
 import { SignIn } from './pages/SignIn';
 import { SignUp } from './pages/SignUp';
 
@@ -13,6 +12,13 @@ const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 if (!clerkPubKey) {
   throw new Error('Missing Clerk Publishable Key');
+}
+
+function SignedInRedirect() {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const redirect = searchParams.get('redirect') || '/fives';
+  return <Navigate to={redirect} replace />;
 }
 
 function App() {
@@ -26,7 +32,7 @@ function App() {
             element={
               <>
                 <SignedIn>
-                  <Navigate to="/fives" replace />
+                  <SignedInRedirect />
                 </SignedIn>
                 <SignedOut>
                   <SignIn />
@@ -39,7 +45,7 @@ function App() {
             element={
               <>
                 <SignedIn>
-                  <Navigate to="/fives" replace />
+                  <SignedInRedirect />
                 </SignedIn>
                 <SignedOut>
                   <SignUp />
@@ -58,11 +64,11 @@ function App() {
             }
           />
 
-          {/* Landing page */}
-          <Route path="/" element={<Landing />} />
+          {/* Default redirect to app */}
+          <Route path="/" element={<Navigate to="/fives" replace />} />
 
           {/* Default redirect */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/fives" replace />} />
         </Routes>
         <ToastContainer
           position="top-right"

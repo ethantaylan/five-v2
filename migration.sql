@@ -38,6 +38,10 @@ CREATE INDEX IF NOT EXISTS idx_fives_share_code ON fives(share_code);
 -- 7. Add created_by index for faster queries
 CREATE INDEX IF NOT EXISTS idx_fives_created_by ON fives(created_by);
 
+-- 8. Add duration in minutes (default 60, min 30, max 120 handled in UI)
+ALTER TABLE fives
+ADD COLUMN IF NOT EXISTS duration_minutes INTEGER DEFAULT 60;
+
 -- Note: We're keeping the groups tables for now in case you want to add them back later
 -- If you want to completely remove them, run these lines:
 -- DROP TABLE IF EXISTS group_members CASCADE;
