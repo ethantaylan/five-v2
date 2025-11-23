@@ -94,37 +94,40 @@ export interface Database {
       fives: {
         Row: {
           id: string;
-          group_id: string;
+          group_id: string | null;
           title: string;
           description: string | null;
           location: string | null;
           date: string;
           max_players: number;
           created_by: string;
+          share_code: string;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          group_id: string;
+          group_id?: string | null;
           title: string;
           description?: string | null;
           location?: string | null;
           date: string;
           max_players?: number;
           created_by: string;
+          share_code?: string;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
-          group_id?: string;
+          group_id?: string | null;
           title?: string;
           description?: string | null;
           location?: string | null;
           date?: string;
           max_players?: number;
           created_by?: string;
+          share_code?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -169,5 +172,6 @@ export interface FiveWithDetails extends Five {
   participantCount?: number;
   isUserParticipant?: boolean;
   isFull?: boolean;
+  isCreator?: boolean;
   group?: Group;
 }

@@ -1,42 +1,36 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useFiveStore } from '../stores/useFiveStore';
-import { useGroupStore } from '../stores/useGroupStore';
 import { useUserStore } from '../stores/useUserStore';
 import { Layout } from '../components/Layout';
 
 export function Fives() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const groupId = searchParams.get('groupId');
-
-  const { fives, loading, fetchFivesByGroup, createFive, joinFive, leaveFive, fetchFiveParticipants, participants } = useFiveStore();
-  const { groups, fetchGroups, currentGroup, setCurrentGroup } = useGroupStore();
+  const { fives, loading, fetchMyFives, createFive, joinFive, leaveFive, deleteFive, fetchFiveParticipants, participants, joinFiveByShareCode } = useFiveStore();
   const { user } = useUserStore();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [fiveToLeave, setFiveToLeave] = useState<typeof fives[0] | null>(null);
+  const [fiveToDelete, setFiveToDelete] = useState<typeof fives[0] | null>(null);
+  const [fiveToShare, setFiveToShare] = useState<typeof fives[0] | null>(null);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [selectedFive, setSelectedFive] = useState<typeof fives[0] | null>(null);
-  const [selectedGroupId, setSelectedGroupId] = useState<string>(groupId || '');
+  const [joinCode, setJoinCode] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
 
   useEffect(() => {
     if (user) {
-      fetchGroups(user.id);
+      fetchMyFives(user.id);
     }
-  }, [user, fetchGroups]);
-
-  useEffect(() => {
-    if (groupId && user) {
-      setSelectedGroupId(groupId);
-      fetchFivesByGroup(groupId, user.id);
-      const group = groups.find((g) => g.id === groupId);
-      if (group) setCurrentGroup(group);
-    }
-  }, [groupId, user, groups, fetchFivesByGroup, setCurrentGroup]);
+  }, [user, fetchMyFives]);
 
   const handleCreateFive = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user || !selectedGroupId) return;
+    if (!user) return;
 
     const formData = new FormData(e.currentTarget);
     const title = formData.get('title') as string;
@@ -45,8 +39,7 @@ export function Fives() {
     const date = formData.get('date') as string;
     const maxPlayers = parseInt(formData.get('maxPlayers') as string) || 10;
 
-    const five = await createFive(
-      selectedGroupId,
+    const result = await createFive(
       title,
       description,
       location,
@@ -54,11 +47,34 @@ export function Fives() {
       maxPlayers,
       user.id
     );
-    if (five) {
-      toast.success('Five créé avec succès !');
+
+    if (result) {
+      toast.success('Match créé avec succès !');
       setShowCreateModal(false);
+      // Show share code
+      setFiveToShare({ ...result.five, share_code: result.shareCode } as any);
+      setShowShareModal(true);
     } else {
-      toast.error('Erreur lors de la création du five');
+      toast.error('Erreur lors de la création du match');
+    }
+  };
+
+  const handleJoinByCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !joinCode.trim() || isJoining) return;
+
+    setIsJoining(true);
+    try {
+      const success = await joinFiveByShareCode(joinCode.trim().toUpperCase(), user.id);
+      if (success) {
+        toast.success('Vous avez rejoint le match !');
+        setShowJoinModal(false);
+        setJoinCode('');
+      } else {
+        toast.error('Code invalide ou match complet');
+      }
+    } finally {
+      setIsJoining(false);
     }
   };
 
@@ -66,19 +82,51 @@ export function Fives() {
     if (!user) return;
     const success = await joinFive(fiveId, user.id);
     if (success) {
-      toast.success('Vous avez rejoint le five !');
+      toast.success('Vous avez rejoint le match !');
     } else {
-      toast.error('Erreur lors de la tentative de rejoindre le five');
+      toast.error('Erreur lors de la tentative de rejoindre le match');
     }
   };
 
-  const handleLeaveFive = async (fiveId: string) => {
-    if (!user) return;
-    const success = await leaveFive(fiveId, user.id);
-    if (success) {
-      toast.info('Vous avez quitté le five');
-    } else {
-      toast.error('Erreur lors de la tentative de quitter le five');
+  const handleLeaveFive = async () => {
+    if (!user || !fiveToLeave || isLeaving) return;
+
+    setIsLeaving(true);
+    try {
+      const success = await leaveFive(fiveToLeave.id, user.id);
+      if (success) {
+        toast.info('Vous avez quitté le match');
+        setShowLeaveModal(false);
+        setFiveToLeave(null);
+        if (showDetailsModal) {
+          setShowDetailsModal(false);
+        }
+      } else {
+        toast.error('Erreur lors de la tentative de quitter le match');
+      }
+    } finally {
+      setIsLeaving(false);
+    }
+  };
+
+  const handleDeleteFive = async () => {
+    if (!user || !fiveToDelete || isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      const success = await deleteFive(fiveToDelete.id, user.id);
+      if (success) {
+        toast.success('Match supprimé');
+        setShowDeleteModal(false);
+        setFiveToDelete(null);
+        if (showDetailsModal) {
+          setShowDetailsModal(false);
+        }
+      } else {
+        toast.error('Erreur lors de la suppression du match');
+      }
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -86,6 +134,11 @@ export function Fives() {
     setSelectedFive(five);
     setShowDetailsModal(true);
     await fetchFiveParticipants(five.id);
+  };
+
+  const handleCopyShareCode = (shareCode: string) => {
+    navigator.clipboard.writeText(shareCode);
+    toast.success('Code copié !');
   };
 
   const formatDate = (dateString: string) => {
@@ -110,51 +163,41 @@ export function Fives() {
     const aIsPast = isFivePast(a.date);
     const bIsPast = isFivePast(b.date);
 
-    // If one is past and the other isn't, upcoming comes first
     if (aIsPast && !bIsPast) return 1;
     if (!aIsPast && bIsPast) return -1;
 
-    // If both are in the same category (both past or both upcoming), sort by date
     return new Date(a.date).getTime() - new Date(b.date).getTime();
   });
-
-  if (!selectedGroupId) {
-    return (
-      <Layout>
-        <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-          <p className="mb-4 text-slate-400">Sélectionnez ou créez un groupe pour voir les fives</p>
-          <button
-            onClick={() => navigate('/groups')}
-            className="rounded-lg bg-red-500 px-6 py-3 text-sm font-medium text-white hover:bg-red-600"
-          >
-            Voir les groupes
-          </button>
-        </div>
-      </Layout>
-    );
-  }
 
   return (
     <Layout>
       <div className="pb-20">
         {/* Header */}
         <div className="mb-6">
+          <h1 className="text-2xl font-bold text-white">Mes Matchs</h1>
+          <p className="text-sm text-slate-400">Créez et gérez vos matchs</p>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mb-6 grid grid-cols-2 gap-3">
           <button
-            onClick={() => navigate('/groups')}
-            className="mb-2 flex items-center gap-1 text-sm text-slate-400 hover:text-white"
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center justify-center gap-2 rounded-lg bg-red-500 px-4 py-3 text-sm font-medium text-white hover:bg-red-600"
           >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Retour aux groupes
+            Créer un match
           </button>
-          <h1 className="text-2xl font-bold text-white">{currentGroup?.name}</h1>
-          <p className="text-sm text-slate-400">Fives disponibles</p>
+          <button
+            onClick={() => setShowJoinModal(true)}
+            className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-slate-900/50 px-4 py-3 text-sm font-medium text-white hover:bg-slate-900/70"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+            Rejoindre par code
+          </button>
         </div>
 
         {/* Fives List */}
@@ -164,13 +207,13 @@ export function Fives() {
           </div>
         ) : fives.length === 0 ? (
           <div className="rounded-lg border border-white/10 bg-slate-900/30 p-8 text-center">
-            <p className="text-slate-400">Aucun five programmé pour ce groupe</p>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="mt-4 rounded-lg bg-red-500 px-6 py-2 text-sm font-medium text-white hover:bg-red-600"
-            >
-              Créer un five
-            </button>
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20">
+              <svg className="h-8 w-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <p className="mb-2 font-semibold text-white">Aucun match</p>
+            <p className="text-sm text-slate-400">Créez votre premier match ou rejoignez-en un avec un code</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -190,6 +233,11 @@ export function Fives() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold text-white">{five.title}</h3>
+                      {five.isCreator && (
+                        <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">
+                          Créateur
+                        </span>
+                      )}
                       {isPast && (
                         <span className="rounded-full bg-slate-700/50 px-2 py-0.5 text-xs text-slate-400">
                           Terminé
@@ -245,7 +293,19 @@ export function Fives() {
                       </div>
                     </div>
                   </div>
-                  <div>
+                  <div className="flex flex-col gap-2">
+                    {!isPast && five.isCreator && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFiveToShare(five);
+                          setShowShareModal(true);
+                        }}
+                        className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800"
+                      >
+                        Partager
+                      </button>
+                    )}
                     {isPast ? (
                       <button
                         disabled
@@ -257,7 +317,8 @@ export function Fives() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleLeaveFive(five.id);
+                          setFiveToLeave(five);
+                          setShowLeaveModal(true);
                         }}
                         className="rounded-lg border border-red-500 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-500/10"
                       >
@@ -289,26 +350,11 @@ export function Fives() {
           </div>
         )}
 
-        {/* Create Button */}
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="fixed bottom-20 right-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-500 text-white shadow-lg shadow-red-500/50 hover:bg-red-600"
-        >
-          <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-        </button>
-
         {/* Create Modal */}
         {showCreateModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
             <div className="w-full max-w-md rounded-lg border border-white/10 bg-slate-900 p-6">
-              <h2 className="mb-4 text-xl font-bold text-white">Créer un five</h2>
+              <h2 className="mb-4 text-xl font-bold text-white">Créer un match</h2>
               <form onSubmit={handleCreateFive} className="space-y-4">
                 <div>
                   <label className="mb-1 block text-sm text-slate-400">Titre</label>
@@ -316,7 +362,7 @@ export function Fives() {
                     type="text"
                     name="title"
                     required
-                    placeholder="Five du samedi"
+                    placeholder="Match du samedi"
                     className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
                   />
                 </div>
@@ -379,6 +425,114 @@ export function Fives() {
           </div>
         )}
 
+        {/* Join by Code Modal */}
+        {showJoinModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div className="w-full max-w-md rounded-lg border border-white/10 bg-slate-900 p-6">
+              <h2 className="mb-4 text-xl font-bold text-white">Rejoindre un match</h2>
+              <form onSubmit={handleJoinByCode} className="space-y-4">
+                <div>
+                  <label className="mb-1 block text-sm text-slate-400">Code du match</label>
+                  <input
+                    type="text"
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                    placeholder="Entrez le code à 8 caractères"
+                    maxLength={8}
+                    required
+                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-center text-2xl font-mono uppercase tracking-widest text-white focus:border-red-500 focus:outline-none"
+                  />
+                  <p className="mt-2 text-xs text-slate-500">
+                    Demandez le code au créateur du match
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowJoinModal(false);
+                      setJoinCode('');
+                    }}
+                    disabled={isJoining}
+                    className="flex-1 rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isJoining || joinCode.length !== 8}
+                    className="flex-1 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isJoining ? 'Rejoindre...' : 'Rejoindre'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Share Modal */}
+        {showShareModal && fiveToShare && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div className="w-full max-w-md rounded-lg border border-white/10 bg-slate-900 p-6">
+              <div className="mb-4 text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20">
+                  <svg className="h-8 w-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h2 className="mb-2 text-xl font-bold text-white">Match créé !</h2>
+                <p className="text-sm text-slate-400">Partagez ce code avec vos amis</p>
+              </div>
+
+              <div className="mb-6">
+                <div className="mb-2 text-center">
+                  <div className="mx-auto inline-block rounded-lg border-2 border-dashed border-red-500/50 bg-red-500/10 px-8 py-4">
+                    <p className="text-4xl font-mono font-bold tracking-widest text-red-400">
+                      {fiveToShare.share_code}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleCopyShareCode(fiveToShare.share_code)}
+                  className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+                >
+                  Copier le code
+                </button>
+              </div>
+
+              <div className="space-y-2 rounded-lg border border-white/10 bg-slate-800/50 p-4">
+                <p className="text-sm font-semibold text-white">{fiveToShare.title}</p>
+                <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span>{formatDate(fiveToShare.date)}</span>
+                </div>
+                {fiveToShare.location && (
+                  <div className="flex items-center gap-2 text-xs text-slate-400">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>{fiveToShare.location}</span>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowShareModal(false);
+                  setFiveToShare(null);
+                }}
+                className="mt-6 w-full rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Details Modal */}
         {showDetailsModal && selectedFive && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
@@ -387,6 +541,11 @@ export function Fives() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h2 className="text-xl font-bold text-white">{selectedFive.title}</h2>
+                    {selectedFive.isCreator && (
+                      <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">
+                        Créateur
+                      </span>
+                    )}
                     {isFivePast(selectedFive.date) && (
                       <span className="rounded-full bg-slate-700/50 px-2 py-0.5 text-xs text-slate-400">
                         Terminé
@@ -421,6 +580,22 @@ export function Fives() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     <span>{selectedFive.location}</span>
+                  </div>
+                )}
+                {selectedFive.isCreator && (
+                  <div className="flex items-center justify-between rounded-lg bg-slate-800/50 p-3">
+                    <div className="flex items-center gap-2 text-sm text-slate-400">
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                      </svg>
+                      <span className="font-mono font-semibold text-red-400">{selectedFive.share_code}</span>
+                    </div>
+                    <button
+                      onClick={() => handleCopyShareCode(selectedFive.share_code)}
+                      className="text-xs text-slate-400 hover:text-white"
+                    >
+                      Copier
+                    </button>
                   </div>
                 )}
               </div>
@@ -469,42 +644,175 @@ export function Fives() {
                 )}
               </div>
 
-              <div className="mt-6">
+              <div className="mt-6 space-y-2">
                 {isFivePast(selectedFive.date) ? (
                   <button
                     disabled
                     className="w-full rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-500 cursor-not-allowed"
                   >
-                    Ce five est terminé
-                  </button>
-                ) : selectedFive.isUserParticipant ? (
-                  <button
-                    onClick={() => {
-                      handleLeaveFive(selectedFive.id);
-                      setShowDetailsModal(false);
-                    }}
-                    className="w-full rounded-lg border border-red-500 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-500/10"
-                  >
-                    Se retirer du five
-                  </button>
-                ) : selectedFive.isFull ? (
-                  <button
-                    disabled
-                    className="w-full rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-500"
-                  >
-                    Complet
+                    Ce match est terminé
                   </button>
                 ) : (
-                  <button
-                    onClick={() => {
-                      handleJoinFive(selectedFive.id);
-                      setShowDetailsModal(false);
-                    }}
-                    className="w-full rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600"
-                  >
-                    Rejoindre le five
-                  </button>
+                  <>
+                    {selectedFive.isCreator ? (
+                      <>
+                        <button
+                          onClick={() => {
+                            setFiveToShare(selectedFive);
+                            setShowShareModal(true);
+                          }}
+                          className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+                        >
+                          Partager le code
+                        </button>
+                        <button
+                          onClick={() => {
+                            setFiveToDelete(selectedFive);
+                            setShowDeleteModal(true);
+                          }}
+                          className="w-full rounded-lg border border-red-500 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-500/10"
+                        >
+                          Supprimer le match
+                        </button>
+                      </>
+                    ) : selectedFive.isUserParticipant ? (
+                      <button
+                        onClick={() => {
+                          setFiveToLeave(selectedFive);
+                          setShowLeaveModal(true);
+                        }}
+                        className="w-full rounded-lg border border-red-500 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-500/10"
+                      >
+                        Se retirer du match
+                      </button>
+                    ) : selectedFive.isFull ? (
+                      <button
+                        disabled
+                        className="w-full rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-500"
+                      >
+                        Complet
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          handleJoinFive(selectedFive.id);
+                          setShowDetailsModal(false);
+                        }}
+                        className="w-full rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600"
+                      >
+                        Rejoindre le match
+                      </button>
+                    )}
+                  </>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Leave Confirmation Modal */}
+        {showLeaveModal && fiveToLeave && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div className="w-full max-w-md rounded-lg border border-white/10 bg-slate-900 p-6">
+              <div className="mb-6 text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-yellow-500/20">
+                  <svg
+                    className="h-8 w-8 text-yellow-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                </div>
+                <h2 className="mb-2 text-xl font-bold text-white">
+                  Se retirer du match ?
+                </h2>
+                <p className="text-sm text-slate-400">
+                  Vous êtes sur le point de vous retirer de "{fiveToLeave.title}".
+                </p>
+                <p className="mt-2 text-sm text-slate-400">
+                  Vous pourrez rejoindre à nouveau ce match tant qu'il n'est pas complet.
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setShowLeaveModal(false);
+                    setFiveToLeave(null);
+                  }}
+                  disabled={isLeaving}
+                  className="flex-1 rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleLeaveFive}
+                  disabled={isLeaving}
+                  className="flex-1 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLeaving ? "Retrait..." : "Me retirer"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && fiveToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div className="w-full max-w-md rounded-lg border border-white/10 bg-slate-900 p-6">
+              <div className="mb-6 text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20">
+                  <svg
+                    className="h-8 w-8 text-red-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </div>
+                <h2 className="mb-2 text-xl font-bold text-white">
+                  Supprimer le match ?
+                </h2>
+                <p className="text-sm text-slate-400">
+                  Vous êtes sur le point de supprimer "{fiveToDelete.title}".
+                </p>
+                <p className="mt-2 text-sm text-red-400">
+                  Cette action est irréversible. Tous les participants seront retirés.
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setFiveToDelete(null);
+                  }}
+                  disabled={isDeleting}
+                  className="flex-1 rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleDeleteFive}
+                  disabled={isDeleting}
+                  className="flex-1 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isDeleting ? "Suppression..." : "Supprimer"}
+                </button>
               </div>
             </div>
           </div>

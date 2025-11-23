@@ -5,7 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Fives } from './pages/Fives';
-import { Groups } from './pages/Groups';
+import { Landing } from './pages/Landing';
 import { SignIn } from './pages/SignIn';
 import { SignUp } from './pages/SignUp';
 
@@ -26,7 +26,7 @@ function App() {
             element={
               <>
                 <SignedIn>
-                  <Navigate to="/groups" replace />
+                  <Navigate to="/fives" replace />
                 </SignedIn>
                 <SignedOut>
                   <SignIn />
@@ -39,7 +39,7 @@ function App() {
             element={
               <>
                 <SignedIn>
-                  <Navigate to="/groups" replace />
+                  <Navigate to="/fives" replace />
                 </SignedIn>
                 <SignedOut>
                   <SignUp />
@@ -50,14 +50,6 @@ function App() {
 
           {/* Protected routes */}
           <Route
-            path="/groups"
-            element={
-              <ProtectedRoute>
-                <Groups />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/fives"
             element={
               <ProtectedRoute>
@@ -66,9 +58,11 @@ function App() {
             }
           />
 
+          {/* Landing page */}
+          <Route path="/" element={<Landing />} />
+
           {/* Default redirect */}
-          <Route path="/" element={<Navigate to="/groups" replace />} />
-          <Route path="*" element={<Navigate to="/groups" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <ToastContainer
           position="top-right"
