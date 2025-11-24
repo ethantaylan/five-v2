@@ -41,11 +41,13 @@ export function Fives() {
   const [isJoining, setIsJoining] = useState(false);
   const [createDuration, setCreateDuration] = useState(60);
   const [editDuration, setEditDuration] = useState(60);
+  const [formMaxPlayers, setFormMaxPlayers] = useState(10);
   const lastAutoJoinCode = useRef<string | null>(null);
 
   useEffect(() => {
     if (fiveToEdit) {
       setEditDuration(fiveToEdit.duration_minutes || 60);
+      setFormMaxPlayers(fiveToEdit.max_players);
     }
   }, [fiveToEdit]);
 
@@ -62,8 +64,10 @@ export function Fives() {
     const formData = new FormData(e.currentTarget);
     const title = formData.get('title') as string;
     const location = formData.get('location') as string;
-    const date = formData.get('date') as string;
-    const maxPlayers = parseInt(formData.get('maxPlayers') as string) || 10;
+    const datePart = formData.get('date') as string;
+    const timePart = formData.get('time') as string;
+    const date = `${datePart}T${timePart}`;
+    const maxPlayers = formMaxPlayers;
 
     const result = await createFive(
       title,
@@ -188,8 +192,10 @@ export function Fives() {
     const formData = new FormData(e.currentTarget);
     const title = formData.get('title') as string;
     const location = formData.get('location') as string;
-    const date = formData.get('date') as string;
-    const maxPlayers = parseInt(formData.get('maxPlayers') as string) || fiveToEdit.max_players;
+    const datePart = formData.get('date') as string;
+    const timePart = formData.get('time') as string;
+    const date = `${datePart}T${timePart}`;
+    const maxPlayers = formMaxPlayers;
 
     setIsUpdating(true);
     try {
@@ -279,7 +285,11 @@ export function Fives() {
         {/* Quick Actions */}
         <div className="mb-6 grid grid-cols-2 gap-3">
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => {
+              setFormMaxPlayers(10);
+              setCreateDuration(60);
+              setShowCreateModal(true);
+            }}
             className="flex items-center justify-center gap-2 rounded-lg bg-red-500 px-4 py-3 text-sm font-medium text-white hover:bg-red-600"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -476,6 +486,7 @@ export function Fives() {
                     name="title"
                     required
                     placeholder="Match du samedi"
+                    maxLength={60}
                     className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
                   />
                 </div>
@@ -485,18 +496,27 @@ export function Fives() {
                     type="text"
                     name="location"
                     required
-                    placeholder="Salle de sport..."
+                    maxLength={80}
+                    placeholder="Urban Soccer - Nanterre"
                     className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
                   />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm text-slate-400">Date et heure</label>
-                  <input
-                    type="datetime-local"
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                    type="date"
                     name="date"
                     required
-                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
+                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none [appearance:textfield]"
                   />
+                    <input
+                      type="time"
+                      name="time"
+                      required
+                      className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none [appearance:textfield]"
+                    />
+                  </div>
                 </div>
                 <div>
                   <div className="mb-1 flex items-center justify-between text-sm text-slate-400">
@@ -520,14 +540,37 @@ export function Fives() {
                 </div>
                 <div>
                   <label className="mb-1 block text-sm text-slate-400">Nombre de joueurs max</label>
-                  <input
-                    type="number"
-                    name="maxPlayers"
-                    defaultValue={10}
-                    min={2}
-                    max={20}
-                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
-                  />
+                  <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-800 px-3 py-2">
+                    <button
+                      type="button"
+                      onClick={() => setFormMaxPlayers((prev) => Math.max(2, prev - 1))}
+                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-slate-900 text-white hover:border-red-500"
+                      aria-label="Diminuer"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14" />
+                      </svg>
+                    </button>
+                    <input
+                      type="number"
+                      name="maxPlayers"
+                      value={formMaxPlayers}
+                      readOnly
+                      min={2}
+                      max={20}
+                      className="w-full rounded-lg border border-white/10 bg-slate-900 px-4 py-2 text-center text-white focus:border-red-500 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFormMaxPlayers((prev) => Math.min(20, prev + 1))}
+                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-slate-900 text-white hover:border-red-500"
+                      aria-label="Augmenter"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v14m-7-7h14" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -607,6 +650,7 @@ export function Fives() {
                     type="text"
                     name="title"
                     required
+                    maxLength={60}
                     defaultValue={fiveToEdit.title}
                     className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
                   />
@@ -617,19 +661,30 @@ export function Fives() {
                     type="text"
                     name="location"
                     required
+                    maxLength={80}
                     defaultValue={fiveToEdit.location || ''}
+                    placeholder="Urban Soccer - Nanterre"
                     className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
                   />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm text-slate-400">Date et heure</label>
-                  <input
-                    type="datetime-local"
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                    type="date"
                     name="date"
                     required
-                    defaultValue={formatDateForInput(fiveToEdit.date)}
-                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
-                  />
+                    defaultValue={formatDateForInput(fiveToEdit.date).slice(0, 10)}
+                      className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none [appearance:textfield]"
+                    />
+                    <input
+                      type="time"
+                      name="time"
+                      required
+                      defaultValue={formatDateForInput(fiveToEdit.date).slice(11, 16)}
+                      className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none [appearance:textfield]"
+                    />
+                  </div>
                 </div>
                 <div>
                   <div className="mb-1 flex items-center justify-between text-sm text-slate-400">
@@ -653,14 +708,37 @@ export function Fives() {
                 </div>
                 <div>
                   <label className="mb-1 block text-sm text-slate-400">Nombre de joueurs max</label>
-                  <input
-                    type="number"
-                    name="maxPlayers"
-                    min={2}
-                    max={20}
-                    defaultValue={fiveToEdit.max_players}
-                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
-                  />
+                  <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-800 px-3 py-2">
+                    <button
+                      type="button"
+                      onClick={() => setFormMaxPlayers((prev) => Math.max(2, prev - 1))}
+                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-slate-900 text-white hover:border-red-500"
+                      aria-label="Diminuer"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14" />
+                      </svg>
+                    </button>
+                    <input
+                      type="number"
+                      name="maxPlayers"
+                      value={formMaxPlayers}
+                      readOnly
+                      min={2}
+                      max={20}
+                      className="w-full rounded-lg border border-white/10 bg-slate-900 px-4 py-2 text-center text-white focus:border-red-500 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFormMaxPlayers((prev) => Math.min(20, prev + 1))}
+                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-slate-900 text-white hover:border-red-500"
+                      aria-label="Augmenter"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v14m-7-7h14" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button

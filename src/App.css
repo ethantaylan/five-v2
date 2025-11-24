@@ -1,3 +1,20 @@
 button {
     cursor: pointer !important;
 }
+
+/* Hide native date/time picker icons */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+    opacity: 0;
+    display: none;
+}
+input[type="date"]::-webkit-inner-spin-button,
+input[type="time"]::-webkit-inner-spin-button {
+    display: none;
+}
+input[type="date"],
+input[type="time"] {
+    -webkit-appearance: none;
+       -moz-appearance: textfield;
+            appearance: textfield;
+}
