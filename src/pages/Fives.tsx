@@ -405,30 +405,7 @@ export function Fives() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
-                    {!isPast && five.isCreator && (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setFiveToEdit(five);
-                            setShowEditModal(true);
-                          }}
-                          className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800"
-                        >
-                          Modifier
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setFiveToShare(five);
-                            setShowShareModal(true);
-                          }}
-                          className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800"
-                        >
-                          Partager
-                        </button>
-                      </>
-                    )}
+                    {/* Actions removed on card for a cleaner list; manage from details modal */}
                     {isPast ? (
                       <button
                         disabled
@@ -503,19 +480,29 @@ export function Fives() {
                 </div>
                 <div>
                   <label className="mb-1 block text-sm text-slate-400">Date et heure</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                    type="date"
-                    name="date"
-                    required
-                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none [appearance:textfield]"
-                  />
-                    <input
-                      type="time"
-                      name="time"
-                      required
-                      className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none [appearance:textfield]"
-                    />
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-800 px-3 py-2">
+                      <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <input
+                        type="date"
+                        name="date"
+                        required
+                        className="flex-1 rounded-lg border border-white/5 bg-transparent px-2 py-1 text-white focus:border-red-500 focus:outline-none [appearance:textfield]"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-800 px-3 py-2">
+                      <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <input
+                        type="time"
+                        name="time"
+                        required
+                        className="flex-1 rounded-lg border border-white/5 bg-transparent px-2 py-1 text-white focus:border-red-500 focus:outline-none [appearance:textfield]"
+                      />
+                    </div>
                   </div>
                 </div>
                 <div>
@@ -669,21 +656,31 @@ export function Fives() {
                 </div>
                 <div>
                   <label className="mb-1 block text-sm text-slate-400">Date et heure</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                    type="date"
-                    name="date"
-                    required
-                    defaultValue={formatDateForInput(fiveToEdit.date).slice(0, 10)}
-                      className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none [appearance:textfield]"
-                    />
-                    <input
-                      type="time"
-                      name="time"
-                      required
-                      defaultValue={formatDateForInput(fiveToEdit.date).slice(11, 16)}
-                      className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none [appearance:textfield]"
-                    />
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-800 px-3 py-2">
+                      <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <input
+                        type="date"
+                        name="date"
+                        required
+                        defaultValue={formatDateForInput(fiveToEdit.date).slice(0, 10)}
+                        className="flex-1 rounded-lg border border-white/5 bg-transparent px-2 py-1 text-white focus:border-red-500 focus:outline-none [appearance:textfield]"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-800 px-3 py-2">
+                      <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <input
+                        type="time"
+                        name="time"
+                        required
+                        defaultValue={formatDateForInput(fiveToEdit.date).slice(11, 16)}
+                        className="flex-1 rounded-lg border border-white/5 bg-transparent px-2 py-1 text-white focus:border-red-500 focus:outline-none [appearance:textfield]"
+                      />
+                    </div>
                   </div>
                 </div>
                 <div>
