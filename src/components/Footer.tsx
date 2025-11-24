@@ -35,7 +35,7 @@ export function Footer() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-white">Strive</h3>
+                  <h3 className="text-2xl font-bold text-white">Stryver</h3>
                   <p className="text-sm text-slate-400">Organisez vos événements</p>
                 </div>
               </div>
@@ -160,7 +160,7 @@ export function Footer() {
         >
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <p className="text-sm text-slate-500">
-              © {currentYear} Strive. Tous droits réservés.
+              © {currentYear} Stryver. Tous droits réservés.
             </p>
             <div className="flex gap-6 text-sm text-slate-500">
               <a href="#" className="transition-colors hover:text-red-400">

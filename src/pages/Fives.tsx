@@ -43,6 +43,7 @@ export function Fives() {
   const [createDuration, setCreateDuration] = useState(60);
   const [editDuration, setEditDuration] = useState(60);
   const [formMaxPlayers, setFormMaxPlayers] = useState(10);
+  const [filter, setFilter] = useState<'active' | 'past'>('active');
   const lastAutoJoinCode = useRef<string | null>(null);
 
   useEffect(() => {
@@ -244,6 +245,11 @@ export function Fives() {
     return new Date(a.date).getTime() - new Date(b.date).getTime();
   });
 
+  const filteredFives = sortedFives.filter((five) => {
+    const past = isFivePast(five.date);
+    return filter === 'past' ? past : !past;
+  });
+
   // Auto-join when arriving with a share link (?shareCode=XXXXXX)
   useEffect(() => {
     if (!user) return;
@@ -286,29 +292,54 @@ export function Fives() {
         </div>
 
         {/* Quick Actions */}
-        <div className="mb-6 grid grid-cols-2 gap-3">
-          <button
-            onClick={() => {
-              setFormMaxPlayers(10);
-              setCreateDuration(60);
-              setShowCreateModal(true);
-            }}
-            className="flex items-center justify-center gap-2 rounded-lg bg-red-500 px-4 py-3 text-sm font-medium text-white hover:bg-red-600"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Créer un match
-          </button>
-          <button
-            onClick={() => setShowJoinModal(true)}
-            className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-slate-900/50 px-4 py-3 text-sm font-medium text-white hover:bg-slate-900/70"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-            </svg>
-            Rejoindre par code
-          </button>
+        <div className="mb-6 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => {
+                setFormMaxPlayers(10);
+                setCreateDuration(60);
+                setShowCreateModal(true);
+              }}
+              className="flex items-center justify-center gap-2 rounded-lg bg-red-500 px-4 py-3 text-sm font-medium text-white hover:bg-red-600"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Créer un match
+            </button>
+            <button
+              onClick={() => setShowJoinModal(true)}
+              className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-slate-900/50 px-4 py-3 text-sm font-medium text-white hover:bg-slate-900/70"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+              </svg>
+              Code
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setFilter('active')}
+              className={`rounded-lg px-3 py-2 text-sm font-medium ${
+                filter === 'active'
+                  ? 'bg-slate-800 text-white border border-white/10'
+                  : 'border border-white/10 bg-slate-900/70 text-slate-300 hover:bg-slate-800'
+              }`}
+            >
+              À venir
+            </button>
+            <button
+              onClick={() => setFilter('past')}
+              className={`rounded-lg px-3 py-2 text-sm font-medium ${
+                filter === 'past'
+                  ? 'bg-slate-800 text-white border border-white/10'
+                  : 'border border-white/10 bg-slate-900/70 text-slate-300 hover:bg-slate-800'
+              }`}
+            >
+              Passés
+            </button>
+          </div>
         </div>
 
         {/* Fives List */}
@@ -316,7 +347,7 @@ export function Fives() {
           <div className="flex items-center justify-center py-12">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-700 border-t-red-500"></div>
           </div>
-        ) : fives.length === 0 ? (
+        ) : filteredFives.length === 0 ? (
           <div className="rounded-lg border border-white/10 bg-slate-900/30 p-8 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20">
               <svg className="h-8 w-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -328,7 +359,7 @@ export function Fives() {
           </div>
         ) : (
           <div className="space-y-3">
-            {sortedFives.map((five) => {
+            {filteredFives.map((five) => {
               const isPast = isFivePast(five.date);
               return (
               <div
@@ -902,35 +933,33 @@ export function Fives() {
                     <span>{selectedFive.location}</span>
                   </div>
                 )}
-                {selectedFive.isCreator && (
-                  <div className="space-y-2 rounded-lg bg-slate-800/50 p-3">
-                    <div className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-slate-900/60 px-3 py-2">
-                      <div className="flex items-center gap-2 text-sm text-slate-300">
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                        </svg>
-                        <span className="font-mono font-semibold text-red-400">{selectedFive.share_code}</span>
-                      </div>
-                      <button
-                        onClick={() => handleCopyShareCode(selectedFive.share_code)}
-                        className="rounded-lg border border-white/10 bg-slate-800 px-3 py-1 text-xs font-medium text-white hover:bg-slate-700"
-                      >
-                        Copier
-                      </button>
+                <div className="space-y-2 rounded-lg bg-slate-800/50 p-3">
+                  <div className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-slate-900/60 px-3 py-2">
+                    <div className="flex items-center gap-2 text-sm text-slate-300">
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                      </svg>
+                      <span className="font-mono font-semibold text-red-400">{selectedFive.share_code}</span>
                     </div>
-                    <div className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-slate-900/60 px-3 py-2">
-                      <div className="flex-1 overflow-hidden text-xs text-slate-300">
-                        <span className="block truncate">{buildShareLink(selectedFive.share_code)}</span>
-                      </div>
-                      <button
-                        onClick={() => handleCopyShareLink(selectedFive.share_code)}
-                        className="rounded-lg border border-white/10 bg-slate-800 px-3 py-1 text-xs font-medium text-white hover:bg-slate-700"
-                      >
-                        Copier
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleCopyShareCode(selectedFive.share_code)}
+                      className="rounded-lg border border-white/10 bg-slate-800 px-3 py-1 text-xs font-medium text-white hover:bg-slate-700"
+                    >
+                      Copier
+                    </button>
                   </div>
-                )}
+                  <div className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-slate-900/60 px-3 py-2">
+                    <div className="flex-1 overflow-hidden text-xs text-slate-300">
+                      <span className="block truncate">{buildShareLink(selectedFive.share_code)}</span>
+                    </div>
+                    <button
+                      onClick={() => handleCopyShareLink(selectedFive.share_code)}
+                      className="rounded-lg border border-white/10 bg-slate-800 px-3 py-1 text-xs font-medium text-white hover:bg-slate-700"
+                    >
+                      Copier
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div className="mt-4">

@@ -17,7 +17,7 @@ export function SignIn() {
             </svg>
           </div>
         </div>
-        <h1 className="text-3xl font-bold text-white">Strive</h1>
+        <h1 className="text-3xl font-bold text-white">Stryver</h1>
         <p className="mt-2 text-slate-400">Organisez facilement vos matchs, événements ou sessions</p>
       </div>
       <ClerkSignIn

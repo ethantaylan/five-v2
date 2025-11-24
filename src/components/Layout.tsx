@@ -27,11 +27,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2">
               <img
                 src="/strive-logo.svg"
-                alt="Strive"
+                alt="Stryver"
                 className="h-10 w-10 rounded-xl bg-slate-900 object-contain"
                 draggable={false}
               />
-              <span className="text-xl font-bold text-white">Strive</span>
+              <span className="text-xl font-bold text-white">Stryver</span>
             </div>
             <UserButton afterSignOutUrl="/sign-in" />
           </div>
