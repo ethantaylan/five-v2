@@ -19,7 +19,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }, [user, syncUser]);
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-slate-950 bg-[radial-gradient(circle_at_20%_20%,rgba(239,68,68,0.08),transparent_30%),radial-gradient(circle_at_80%_0%,rgba(124,58,237,0.08),transparent_25%),radial-gradient(circle_at_50%_80%,rgba(34,197,94,0.06),transparent_30%)]">
       {/* Header */}
       <header className="border-b border-white/10 bg-slate-900/50 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 py-4">
