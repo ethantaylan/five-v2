@@ -1118,7 +1118,7 @@ export function Fives() {
                     setFiveToLeave(null);
                   }}
                   disabled={isLeaving}
-                  className="flex-1 rounded-lg border border-border-primary px-4 py-2 text-sm font-medium text-white hover:bg-bg-secondary disabled:opacity-50"
+                  className="flex-1 rounded-lg border border-border-primary px-4 py-2 text-sm font-medium text-text-primary bg-bg-secondary hover:bg-bg-hover disabled:opacity-50"
                 >
                   Annuler
                 </button>
