@@ -36,6 +36,7 @@ export function Fives() {
   const [isLeaving, setIsLeaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [selectedFive, setSelectedFive] = useState<typeof fives[0] | null>(null);
   const [joinCode, setJoinCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
@@ -59,7 +60,7 @@ export function Fives() {
 
   const handleCreateFive = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || isCreating) return;
 
     const formData = new FormData(e.currentTarget);
     const title = formData.get('title') as string;
@@ -69,6 +70,7 @@ export function Fives() {
     const date = `${datePart}T${timePart}`;
     const maxPlayers = formMaxPlayers;
 
+    setIsCreating(true);
     const result = await createFive(
       title,
       location,
@@ -88,6 +90,7 @@ export function Fives() {
     } else {
       toast.error('Erreur lors de la création du match');
     }
+    setIsCreating(false);
   };
 
   const handleJoinByCode = async (e: React.FormEvent) => {
@@ -462,7 +465,6 @@ export function Fives() {
                     type="text"
                     name="title"
                     required
-                    placeholder="Match du samedi"
                     maxLength={60}
                     className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
                   />
@@ -474,7 +476,6 @@ export function Fives() {
                     name="location"
                     required
                     maxLength={80}
-                    placeholder="Urban Soccer - Nanterre"
                     className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
                   />
                 </div>
@@ -514,15 +515,16 @@ export function Fives() {
                     type="range"
                     min={30}
                     max={120}
-                    step={15}
+                    step={30}
                     value={createDuration}
                     onChange={(e) => setCreateDuration(parseInt(e.target.value))}
                     className="w-full accent-red-500"
                   />
                   <div className="mt-1 flex justify-between text-xs text-slate-500">
                     <span>30m</span>
-                    <span>1h</span>
-                    <span>2h</span>
+                    <span>60m</span>
+                    <span>90m</span>
+                    <span>120m</span>
                   </div>
                 </div>
                 <div>
@@ -563,15 +565,17 @@ export function Fives() {
                   <button
                     type="button"
                     onClick={() => setShowCreateModal(false)}
-                    className="flex-1 rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                    disabled={isCreating}
+                    className="flex-1 rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
                   >
                     Annuler
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600"
+                    disabled={isCreating}
+                    className="flex-1 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50"
                   >
-                    Créer
+                    {isCreating ? 'Création...' : 'Créer'}
                   </button>
                 </div>
               </form>
@@ -650,7 +654,6 @@ export function Fives() {
                     required
                     maxLength={80}
                     defaultValue={fiveToEdit.location || ''}
-                    placeholder="Urban Soccer - Nanterre"
                     className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
                   />
                 </div>
@@ -692,15 +695,16 @@ export function Fives() {
                     type="range"
                     min={30}
                     max={120}
-                    step={15}
+                    step={30}
                     value={editDuration}
                     onChange={(e) => setEditDuration(parseInt(e.target.value))}
                     className="w-full accent-red-500"
                   />
                   <div className="mt-1 flex justify-between text-xs text-slate-500">
                     <span>30m</span>
-                    <span>1h</span>
-                    <span>2h</span>
+                    <span>60m</span>
+                    <span>90m</span>
+                    <span>120m</span>
                   </div>
                 </div>
                 <div>
@@ -963,9 +967,16 @@ export function Fives() {
                               ? `${participant.user.first_name} ${participant.user.last_name}`
                               : participant.user.email}
                           </p>
-                          <p className="text-xs text-slate-500">
-                            Rejoint le {new Date(participant.joined_at).toLocaleDateString('fr-FR')}
-                          </p>
+                          <div className="flex items-center gap-2 text-xs text-slate-500">
+                            <span>
+                              Rejoint le {new Date(participant.joined_at).toLocaleDateString('fr-FR')}
+                            </span>
+                            {participant.user_id === selectedFive.created_by && (
+                              <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] text-red-300">
+                                Organisateur
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -988,6 +999,7 @@ export function Fives() {
                         <button
                           onClick={() => {
                             setFiveToEdit(selectedFive);
+                            setShowDetailsModal(false);
                             setShowEditModal(true);
                           }}
                           className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
