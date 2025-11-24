@@ -1,4 +1,111 @@
 @import "tailwindcss";
- @plugin "daisyui" {
-   themes: lofi --default, dark --prefersdark;
- }
+
+/* Light theme variables */
+:root.light {
+  --bg-primary: 248 250 252;
+  --bg-secondary: 255 255 255;
+  --bg-tertiary: 241 245 249;
+  --bg-card: 255 255 255;
+  --bg-modal: 255 255 255;
+  --bg-hover: 241 245 249;
+  --bg-accent: 239 68 68;
+
+  --text-primary: 15 23 42;
+  --text-secondary: 71 85 105;
+  --text-tertiary: 148 163 184;
+  --text-inverse: 255 255 255;
+
+  --border-primary: 226 232 240;
+  --border-secondary: 203 213 225;
+  --border-hover: 239 68 68;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+/* Dark theme variables */
+:root.dark {
+  --bg-primary: 2 6 23;
+  --bg-secondary: 15 23 42;
+  --bg-tertiary: 30 41 59;
+  --bg-card: 15 23 42;
+  --bg-modal: 15 23 42;
+  --bg-hover: 30 41 59;
+  --bg-accent: 239 68 68;
+
+  --text-primary: 255 255 255;
+  --text-secondary: 203 213 225;
+  --text-tertiary: 148 163 184;
+  --text-inverse: 15 23 42;
+
+  --border-primary: 51 65 85;
+  --border-secondary: 71 85 105;
+  --border-hover: 239 68 68;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+}
+
+body {
+  background-color: rgb(var(--bg-primary));
+  color: rgb(var(--text-primary));
+}
+
+/* Fallback utilities for CSS variable-driven colors when Tailwind class resolution fails */
+.bg-bg-modal {
+  background-color: rgb(var(--bg-modal));
+}
+
+.border-border-primary {
+  border-color: rgb(var(--border-primary)) !important;
+}
+
+.border-border-secondary {
+  border-color: rgb(var(--border-secondary)) !important;
+}
+
+.border-border-hover {
+  border-color: rgb(var(--border-hover)) !important;
+}
+
+.text-text-primary {
+  color: rgb(var(--text-primary)) !important;
+}
+
+.text-text-secondary {
+  color: rgb(var(--text-secondary)) !important;
+}
+
+.text-text-tertiary {
+  color: rgb(var(--text-tertiary)) !important;
+}
+
+.text-text-inverse {
+  color: rgb(var(--text-inverse)) !important;
+}
+
+/* Default to dark theme */
+:root {
+  --bg-primary: 2 6 23;
+  --bg-secondary: 15 23 42;
+  --bg-tertiary: 30 41 59;
+  --bg-card: 15 23 42;
+  --bg-modal: 15 23 42;
+  --bg-hover: 30 41 59;
+  --bg-accent: 239 68 68;
+
+  --text-primary: 255 255 255;
+  --text-secondary: 203 213 225;
+  --text-tertiary: 148 163 184;
+  --text-inverse: 15 23 42;
+
+  --border-primary: 51 65 85;
+  --border-secondary: 71 85 105;
+  --border-hover: 239 68 68;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+}

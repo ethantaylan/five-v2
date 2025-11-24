@@ -287,8 +287,8 @@ export function Fives() {
       <div className="pb-20">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white">Mes Matchs</h1>
-          <p className="text-sm text-slate-400">Créez et gérez vos matchs</p>
+          <h1 className="text-2xl font-bold text-text-primary">Mes Matchs</h1>
+          <p className="text-sm text-text-tertiary">Créez et gérez vos matchs</p>
         </div>
 
         {/* Quick Actions */}
@@ -309,7 +309,7 @@ export function Fives() {
             </button>
             <button
               onClick={() => setShowJoinModal(true)}
-              className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-slate-900/50 px-4 py-3 text-sm font-medium text-white hover:bg-slate-900/70"
+              className="flex items-center justify-center gap-2 rounded-lg border border-border-primary bg-bg-card px-4 py-3 text-sm font-medium text-text-primary hover:bg-bg-hover transition-colors"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
@@ -321,20 +321,20 @@ export function Fives() {
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => setFilter('active')}
-              className={`rounded-lg px-3 py-2 text-sm font-medium ${
+              className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 filter === 'active'
-                  ? 'bg-slate-800 text-white border border-white/10'
-                  : 'border border-white/10 bg-slate-900/70 text-slate-300 hover:bg-slate-800'
+                  ? 'bg-red-500/10 text-red-500 border border-red-500/30'
+                  : 'border border-border-primary bg-bg-card text-text-secondary hover:bg-bg-hover hover:text-text-primary'
               }`}
             >
               À venir
             </button>
             <button
               onClick={() => setFilter('past')}
-              className={`rounded-lg px-3 py-2 text-sm font-medium ${
+              className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 filter === 'past'
-                  ? 'bg-slate-800 text-white border border-white/10'
-                  : 'border border-white/10 bg-slate-900/70 text-slate-300 hover:bg-slate-800'
+                  ? 'bg-red-500/10 text-red-500 border border-red-500/30'
+                  : 'border border-border-primary bg-bg-card text-text-secondary hover:bg-bg-hover hover:text-text-primary'
               }`}
             >
               Passés
@@ -345,17 +345,17 @@ export function Fives() {
         {/* Fives List */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-700 border-t-red-500"></div>
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-border-primary border-t-red-500"></div>
           </div>
         ) : filteredFives.length === 0 ? (
-          <div className="rounded-lg border border-white/10 bg-slate-900/30 p-8 text-center">
+          <div className="rounded-lg border border-border-primary bg-bg-card p-8 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20">
               <svg className="h-8 w-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
-            <p className="mb-2 font-semibold text-white">Aucun match</p>
-            <p className="text-sm text-slate-400">Créez votre premier match ou rejoignez-en un avec un code</p>
+            <p className="mb-2 font-semibold text-text-primary">Aucun match</p>
+            <p className="text-sm text-text-tertiary">Créez votre premier match ou rejoignez-en un avec un code</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -365,28 +365,28 @@ export function Fives() {
               <div
                 key={five.id}
                 onClick={() => handleShowDetails(five)}
-                className={`cursor-pointer rounded-lg border border-white/10 p-4 transition-colors ${
+                className={`cursor-pointer rounded-lg border p-4 transition-all duration-200 ${
                   isPast
-                    ? 'bg-slate-900/30 opacity-60'
-                    : 'bg-slate-900/50 hover:border-red-500/50 hover:bg-slate-900/70'
+                    ? 'border-border-primary bg-bg-card opacity-60'
+                    : 'border-border-primary bg-bg-card hover:border-red-500/50 hover:bg-bg-hover hover:shadow-md'
                 }`}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-white">{five.title}</h3>
+                    <h3 className="font-semibold text-text-primary">{five.title}</h3>
                     {five.isCreator && (
                       <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">
                         Créateur
                       </span>
                     )}
                     {isPast && (
-                      <span className="rounded-full bg-slate-700/50 px-2 py-0.5 text-xs text-slate-400">
+                      <span className="rounded-full bg-text-tertiary/20 px-2 py-0.5 text-xs text-text-tertiary">
                         Terminé
                       </span>
                     )}
                   </div>
-                    <div className="mt-3 space-y-1 text-sm text-slate-500">
+                    <div className="mt-3 space-y-1 text-sm text-text-tertiary">
                   <div className="flex items-center gap-2">
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -443,7 +443,7 @@ export function Fives() {
                     {isPast ? (
                       <button
                         disabled
-                        className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-500 cursor-not-allowed"
+                        className="rounded-lg bg-bg-tertiary px-4 py-2 text-sm font-medium text-text-tertiary cursor-not-allowed"
                       >
                         Terminé
                       </button>
@@ -461,7 +461,7 @@ export function Fives() {
                     ) : five.isFull ? (
                       <button
                         disabled
-                        className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-500"
+                        className="rounded-lg bg-bg-tertiary px-4 py-2 text-sm font-medium text-text-tertiary cursor-not-allowed"
                       >
                         Complet
                       </button>
@@ -487,60 +487,60 @@ export function Fives() {
         {/* Create Modal */}
         {showCreateModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="w-full max-w-md rounded-lg border border-white/10 bg-slate-900 p-6">
-              <h2 className="mb-4 text-xl font-bold text-white">Créer un match</h2>
+            <div className="w-full max-w-md rounded-lg border border-border-primary bg-bg-modal p-6 shadow-2xl">
+              <h2 className="mb-4 text-xl font-bold text-text-primary">Créer un match</h2>
               <form onSubmit={handleCreateFive} className="space-y-4">
                 <div>
-                  <label className="mb-1 block text-sm text-slate-400">Titre</label>
+                  <label className="mb-1 block text-sm text-text-tertiary">Titre</label>
                   <input
                     type="text"
                     name="title"
                     required
                     maxLength={60}
-                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
+                    className="w-full rounded-lg border border-border-primary bg-bg-secondary px-4 py-2 text-text-primary focus:border-red-500 focus:outline-none transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm text-slate-400">Lieu</label>
+                  <label className="mb-1 block text-sm text-text-tertiary">Lieu</label>
                   <input
                     type="text"
                     name="location"
                     required
                     maxLength={80}
-                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
+                    className="w-full rounded-lg border border-border-primary bg-bg-secondary px-4 py-2 text-text-primary focus:border-red-500 focus:outline-none transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm text-slate-400">Date et heure</label>
+                  <label className="mb-1 block text-sm text-text-tertiary">Date et heure</label>
                   <div className="flex flex-col gap-2 sm:flex-row">
-                    <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-800 px-3 py-2">
-                      <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary px-3 py-2">
+                      <svg className="h-4 w-4 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       <input
                         type="date"
                         name="date"
                         required
-                        className="flex-1 rounded-lg border border-white/5 bg-transparent px-2 py-1 text-white focus:border-red-500 focus:outline-none [appearance:textfield]"
+                        className="flex-1 rounded-lg border border-border-primary/50 bg-transparent px-2 py-1 text-text-primary focus:border-red-500 focus:outline-none [appearance:textfield]"
                       />
                     </div>
-                    <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-800 px-3 py-2">
-                      <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary px-3 py-2">
+                      <svg className="h-4 w-4 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <input
                         type="time"
                         name="time"
                         required
-                        className="flex-1 rounded-lg border border-white/5 bg-transparent px-2 py-1 text-white focus:border-red-500 focus:outline-none [appearance:textfield]"
+                        className="flex-1 rounded-lg border border-border-primary/50 bg-transparent px-2 py-1 text-text-primary focus:border-red-500 focus:outline-none [appearance:textfield]"
                       />
                     </div>
                   </div>
                 </div>
                 <div>
-                  <div className="mb-1 flex items-center justify-between text-sm text-slate-400">
+                  <div className="mb-1 flex items-center justify-between text-sm text-text-tertiary">
                     <label>Durée (minutes)</label>
-                    <span className="text-white">{createDuration} min</span>
+                    <span className="text-text-primary font-medium">{createDuration} min</span>
                   </div>
                   <input
                     type="range"
@@ -551,7 +551,7 @@ export function Fives() {
                     onChange={(e) => setCreateDuration(parseInt(e.target.value))}
                     className="w-full accent-red-500"
                   />
-                  <div className="mt-1 flex justify-between text-xs text-slate-500">
+                  <div className="mt-1 flex justify-between text-xs text-text-tertiary">
                     <span>30m</span>
                     <span>60m</span>
                     <span>90m</span>
@@ -559,12 +559,12 @@ export function Fives() {
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm text-slate-400">Nombre de joueurs max</label>
-                  <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-800 px-3 py-2">
+                  <label className="mb-1 block text-sm text-text-tertiary">Nombre de joueurs max</label>
+                  <div className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary px-3 py-2">
                     <button
                       type="button"
                       onClick={() => setFormMaxPlayers((prev) => Math.max(2, prev - 1))}
-                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-slate-900 text-white hover:border-red-500"
+                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-border-primary bg-bg-tertiary text-text-primary hover:border-red-500 transition-colors"
                       aria-label="Diminuer"
                     >
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -578,12 +578,12 @@ export function Fives() {
                       readOnly
                       min={2}
                       max={20}
-                      className="w-full rounded-lg border border-white/10 bg-slate-900 px-4 py-2 text-center text-white focus:border-red-500 focus:outline-none"
+                      className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-4 py-2 text-center text-text-primary focus:border-red-500 focus:outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => setFormMaxPlayers((prev) => Math.min(20, prev + 1))}
-                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-slate-900 text-white hover:border-red-500"
+                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-border-primary bg-bg-tertiary text-text-primary hover:border-red-500 transition-colors"
                       aria-label="Augmenter"
                     >
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -597,14 +597,14 @@ export function Fives() {
                     type="button"
                     onClick={() => setShowCreateModal(false)}
                     disabled={isCreating}
-                    className="flex-1 rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                    className="flex-1 rounded-lg border border-border-primary px-4 py-2 text-sm font-medium text-text-primary hover:bg-bg-hover disabled:opacity-50 transition-colors"
                   >
                     Annuler
                   </button>
                   <button
                     type="submit"
                     disabled={isCreating}
-                    className="flex-1 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50"
+                    className="flex-1 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50 transition-colors"
                   >
                     {isCreating ? 'Création...' : 'Créer'}
                   </button>
@@ -617,11 +617,11 @@ export function Fives() {
         {/* Join by Code Modal */}
         {showJoinModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="w-full max-w-md rounded-lg border border-white/10 bg-slate-900 p-6">
-              <h2 className="mb-4 text-xl font-bold text-white">Rejoindre un match</h2>
+            <div className="w-full max-w-md rounded-lg border border-border-primary bg-bg-modal p-6 shadow-2xl">
+              <h2 className="mb-4 text-xl font-bold text-text-primary">Rejoindre un match</h2>
               <form onSubmit={handleJoinByCode} className="space-y-4">
                 <div>
-                  <label className="mb-1 block text-sm text-slate-400">Code du match</label>
+                  <label className="mb-1 block text-sm text-text-tertiary">Code du match</label>
                   <input
                     type="text"
                     value={joinCode}
@@ -629,9 +629,9 @@ export function Fives() {
                     placeholder="Entrez le code à 8 caractères"
                     maxLength={8}
                     required
-                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-center font-mono uppercase tracking-widest text-white focus:border-red-500 focus:outline-none"
+                    className="w-full rounded-lg border border-border-primary bg-bg-secondary px-4 py-2 text-center font-mono uppercase tracking-widest text-text-primary focus:border-red-500 focus:outline-none transition-colors"
                   />
-                  <p className="mt-2 text-xs text-slate-500">
+                  <p className="mt-2 text-xs text-text-tertiary">
                     Demandez le code au créateur du match
                   </p>
                 </div>
@@ -643,14 +643,14 @@ export function Fives() {
                       setJoinCode('');
                     }}
                     disabled={isJoining}
-                    className="flex-1 rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                    className="flex-1 rounded-lg border border-border-primary px-4 py-2 text-sm font-medium text-text-primary hover:bg-bg-hover disabled:opacity-50 transition-colors"
                   >
                     Annuler
                   </button>
                   <button
                     type="submit"
                     disabled={isJoining || joinCode.length !== 8}
-                    className="flex-1 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex-1 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
                   >
                     {isJoining ? 'Rejoindre...' : 'Rejoindre'}
                   </button>
@@ -663,36 +663,36 @@ export function Fives() {
         {/* Edit Modal */}
         {showEditModal && fiveToEdit && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="w-full max-w-md rounded-lg border border-white/10 bg-slate-900 p-6">
-              <h2 className="mb-4 text-xl font-bold text-white">Modifier le match</h2>
+            <div className="w-full max-w-md rounded-lg border border-border-primary bg-bg-modal p-6 shadow-2xl">
+              <h2 className="mb-4 text-xl font-bold text-text-primary">Modifier le match</h2>
               <form onSubmit={handleEditFive} className="space-y-4">
                 <div>
-                  <label className="mb-1 block text-sm text-slate-400">Titre</label>
+                  <label className="mb-1 block text-sm text-text-tertiary">Titre</label>
                   <input
                     type="text"
                     name="title"
                     required
                     maxLength={60}
                     defaultValue={fiveToEdit.title}
-                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
+                    className="w-full rounded-lg border border-border-primary bg-bg-secondary px-4 py-2 text-white focus:border-red-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm text-slate-400">Lieu</label>
+                  <label className="mb-1 block text-sm text-text-tertiary">Lieu</label>
                   <input
                     type="text"
                     name="location"
                     required
                     maxLength={80}
                     defaultValue={fiveToEdit.location || ''}
-                    className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-white focus:border-red-500 focus:outline-none"
+                    className="w-full rounded-lg border border-border-primary bg-bg-secondary px-4 py-2 text-white focus:border-red-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm text-slate-400">Date et heure</label>
+                  <label className="mb-1 block text-sm text-text-tertiary">Date et heure</label>
                   <div className="flex flex-col gap-2 sm:flex-row">
-                    <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-800 px-3 py-2">
-                      <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary px-3 py-2">
+                      <svg className="h-4 w-4 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       <input
@@ -703,8 +703,8 @@ export function Fives() {
                         className="flex-1 rounded-lg border border-white/5 bg-transparent px-2 py-1 text-white focus:border-red-500 focus:outline-none [appearance:textfield]"
                       />
                     </div>
-                    <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-800 px-3 py-2">
-                      <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary px-3 py-2">
+                      <svg className="h-4 w-4 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <input
@@ -718,9 +718,9 @@ export function Fives() {
                   </div>
                 </div>
                 <div>
-                  <div className="mb-1 flex items-center justify-between text-sm text-slate-400">
+                  <div className="mb-1 flex items-center justify-between text-sm text-text-tertiary">
                     <label>Durée (minutes)</label>
-                    <span className="text-white">{editDuration} min</span>
+                    <span className="text-text-primary">{editDuration} min</span>
                   </div>
                   <input
                     type="range"
@@ -731,7 +731,7 @@ export function Fives() {
                     onChange={(e) => setEditDuration(parseInt(e.target.value))}
                     className="w-full accent-red-500"
                   />
-                  <div className="mt-1 flex justify-between text-xs text-slate-500">
+                  <div className="mt-1 flex justify-between text-xs text-text-tertiary">
                     <span>30m</span>
                     <span>60m</span>
                     <span>90m</span>
@@ -739,12 +739,12 @@ export function Fives() {
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm text-slate-400">Nombre de joueurs max</label>
-                  <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-800 px-3 py-2">
+                  <label className="mb-1 block text-sm text-text-tertiary">Nombre de joueurs max</label>
+                  <div className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary px-3 py-2">
                     <button
                       type="button"
                       onClick={() => setFormMaxPlayers((prev) => Math.max(2, prev - 1))}
-                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-slate-900 text-white hover:border-red-500"
+                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-border-primary bg-bg-tertiary text-white hover:border-red-500"
                       aria-label="Diminuer"
                     >
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -758,12 +758,12 @@ export function Fives() {
                       readOnly
                       min={2}
                       max={20}
-                      className="w-full rounded-lg border border-white/10 bg-slate-900 px-4 py-2 text-center text-white focus:border-red-500 focus:outline-none"
+                      className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-4 py-2 text-center text-white focus:border-red-500 focus:outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => setFormMaxPlayers((prev) => Math.min(20, prev + 1))}
-                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-slate-900 text-white hover:border-red-500"
+                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-border-primary bg-bg-tertiary text-white hover:border-red-500"
                       aria-label="Augmenter"
                     >
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -780,7 +780,7 @@ export function Fives() {
                       setFiveToEdit(null);
                     }}
                     disabled={isUpdating}
-                    className="flex-1 rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                    className="flex-1 rounded-lg border border-border-primary px-4 py-2 text-sm font-medium text-white hover:bg-bg-secondary disabled:opacity-50"
                   >
                     Annuler
                   </button>
@@ -800,15 +800,15 @@ export function Fives() {
         {/* Share Modal */}
         {showShareModal && fiveToShare && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="w-full max-w-md rounded-lg border border-white/10 bg-slate-900 p-6">
+            <div className="w-full max-w-md rounded-lg border border-border-primary bg-bg-modal p-6 shadow-2xl">
               <div className="mb-4 text-center">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20">
                   <svg className="h-8 w-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h2 className="mb-2 text-xl font-bold text-white">Match créé !</h2>
-                <p className="text-sm text-slate-400">Partagez ce code avec vos amis</p>
+                <h2 className="mb-2 text-xl font-bold text-text-primary">Match créé !</h2>
+                <p className="text-sm text-text-tertiary">Partagez ce code avec vos amis</p>
               </div>
 
               <div className="mb-6">
@@ -821,38 +821,38 @@ export function Fives() {
                 </div>
                 <button
                   onClick={() => handleCopyShareCode(fiveToShare.share_code)}
-                  className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+                  className="w-full rounded-lg border border-border-primary bg-bg-secondary px-4 py-2 text-sm font-medium text-text-primary hover:bg-bg-hover"
                 >
                   Copier le code
                 </button>
               </div>
 
-              <div className="mb-6 rounded-lg border border-white/10 bg-slate-800/60 p-4">
-                <p className="mb-2 text-sm font-semibold text-white">Lien direct</p>
+              <div className="mb-6 rounded-lg border border-border-primary bg-bg-secondary/60 p-4">
+                <p className="mb-2 text-sm font-semibold text-text-primary">Lien direct</p>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 overflow-hidden rounded-lg bg-slate-900/70 px-3 py-2 text-xs text-slate-300">
+                  <div className="flex-1 overflow-hidden rounded-lg bg-bg-tertiary/70 px-3 py-2 text-xs text-text-secondary">
                     <span className="block truncate">{buildShareLink(fiveToShare.share_code)}</span>
                   </div>
                   <button
                     onClick={() => handleCopyShareLink(fiveToShare.share_code)}
-                    className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800"
+                    className="rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2 text-xs font-medium text-text-primary hover:bg-bg-secondary"
                   >
                     Copier
                   </button>
                 </div>
-                <p className="mt-2 text-xs text-slate-500">Toute personne connectée avec ce lien rejoindra automatiquement le match.</p>
+                <p className="mt-2 text-xs text-text-tertiary">Toute personne connectée avec ce lien rejoindra automatiquement le match.</p>
               </div>
 
-              <div className="space-y-2 rounded-lg border border-white/10 bg-slate-800/50 p-4">
-                <p className="text-sm font-semibold text-white">{fiveToShare.title}</p>
-                <div className="flex items-center gap-2 text-xs text-slate-400">
+              <div className="space-y-2 rounded-lg border border-border-primary bg-bg-secondary/50 p-4">
+                <p className="text-sm font-semibold text-text-primary">{fiveToShare.title}</p>
+                <div className="flex items-center gap-2 text-xs text-text-tertiary">
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   <span>{formatDate(fiveToShare.date)}</span>
                 </div>
                 {fiveToShare.location && (
-                  <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <div className="flex items-center gap-2 text-xs text-text-tertiary">
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -860,7 +860,7 @@ export function Fives() {
                     <span>{fiveToShare.location}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-2 text-xs text-slate-400">
+                <div className="flex items-center gap-2 text-xs text-text-tertiary">
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -884,18 +884,18 @@ export function Fives() {
         {/* Details Modal */}
         {showDetailsModal && selectedFive && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="w-full max-w-md rounded-lg border border-white/10 bg-slate-900 p-6">
+            <div className="w-full max-w-md rounded-lg border border-border-primary bg-bg-modal p-6 shadow-2xl">
               <div className="mb-4 flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-white">{selectedFive.title}</h2>
+                    <h2 className="text-xl font-bold text-text-primary">{selectedFive.title}</h2>
                     {selectedFive.isCreator && (
                       <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">
                         Créateur
                       </span>
                     )}
                     {isFivePast(selectedFive.date) && (
-                      <span className="rounded-full bg-slate-700/50 px-2 py-0.5 text-xs text-slate-400">
+                      <span className="rounded-full bg-bg-tertiary/50 px-2 py-0.5 text-xs text-text-tertiary">
                         Terminé
                       </span>
                     )}
@@ -903,7 +903,7 @@ export function Fives() {
                 </div>
                 <button
                   onClick={() => setShowDetailsModal(false)}
-                  className="text-slate-400 hover:text-white"
+                  className="text-text-tertiary hover:text-text-primary"
                 >
                   <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -911,21 +911,21 @@ export function Fives() {
                 </button>
               </div>
 
-              <div className="space-y-3 border-b border-white/10 pb-4">
-                <div className="flex items-center gap-2 text-sm text-slate-400">
+              <div className="space-y-3 border-b border-border-primary pb-4">
+                <div className="flex items-center gap-2 text-sm text-text-tertiary">
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   <span>{formatDate(selectedFive.date)}</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-slate-400">
+                <div className="flex items-center gap-2 text-sm text-text-tertiary">
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span>{formatDuration(selectedFive.duration_minutes)}</span>
                 </div>
                 {selectedFive.location && (
-                  <div className="flex items-center gap-2 text-sm text-slate-400">
+                  <div className="flex items-center gap-2 text-sm text-text-tertiary">
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -933,9 +933,9 @@ export function Fives() {
                     <span>{selectedFive.location}</span>
                   </div>
                 )}
-                <div className="space-y-2 rounded-lg bg-slate-800/50 p-3">
-                  <div className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-slate-900/60 px-3 py-2">
-                    <div className="flex items-center gap-2 text-sm text-slate-300">
+                <div className="space-y-2 rounded-lg bg-bg-secondary/50 p-3">
+                  <div className="flex items-center justify-between gap-2 rounded-lg border border-border-primary bg-bg-tertiary/60 px-3 py-2">
+                    <div className="flex items-center gap-2 text-sm text-text-secondary">
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                       </svg>
@@ -943,18 +943,18 @@ export function Fives() {
                     </div>
                     <button
                       onClick={() => handleCopyShareCode(selectedFive.share_code)}
-                      className="rounded-lg border border-white/10 bg-slate-800 px-3 py-1 text-xs font-medium text-white hover:bg-slate-700"
+                      className="rounded-lg border border-border-primary bg-bg-secondary px-3 py-1 text-xs font-medium text-text-primary hover:bg-bg-hover"
                     >
                       Copier
                     </button>
                   </div>
-                  <div className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-slate-900/60 px-3 py-2">
-                    <div className="flex-1 overflow-hidden text-xs text-slate-300">
+                  <div className="flex items-center justify-between gap-2 rounded-lg border border-border-primary bg-bg-tertiary/60 px-3 py-2">
+                    <div className="flex-1 overflow-hidden text-xs text-text-secondary">
                       <span className="block truncate">{buildShareLink(selectedFive.share_code)}</span>
                     </div>
                     <button
                       onClick={() => handleCopyShareLink(selectedFive.share_code)}
-                      className="rounded-lg border border-white/10 bg-slate-800 px-3 py-1 text-xs font-medium text-white hover:bg-slate-700"
+                      className="rounded-lg border border-border-primary bg-bg-secondary px-3 py-1 text-xs font-medium text-text-primary hover:bg-bg-hover"
                     >
                       Copier
                     </button>
@@ -964,7 +964,7 @@ export function Fives() {
 
               <div className="mt-4">
                 <div className="mb-3 flex items-center justify-between">
-                  <h3 className="font-semibold text-white">
+                  <h3 className="font-semibold text-text-primary">
                     Participants ({selectedFive.participantCount}/{selectedFive.max_players})
                   </h3>
                   {selectedFive.isFull && (
@@ -975,7 +975,7 @@ export function Fives() {
                 </div>
 
                 {participants.length === 0 ? (
-                  <p className="py-4 text-center text-sm text-slate-500">
+                  <p className="py-4 text-center text-sm text-text-tertiary">
                     Aucun participant pour le moment
                   </p>
                 ) : (
@@ -983,7 +983,7 @@ export function Fives() {
                     {participants.map((participant) => (
                       <div
                         key={participant.id}
-                        className="flex items-center gap-3 rounded-lg bg-slate-800/50 p-3"
+                        className="flex items-center gap-3 rounded-lg bg-bg-secondary/50 p-3"
                       >
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/20 text-red-400">
                           <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
@@ -991,12 +991,12 @@ export function Fives() {
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-white">
+                          <p className="text-sm font-medium text-text-primary">
                             {participant.user.first_name && participant.user.last_name
                               ? `${participant.user.first_name} ${participant.user.last_name}`
                               : participant.user.email}
                           </p>
-                          <div className="flex items-center gap-2 text-xs text-slate-500">
+                          <div className="flex items-center gap-2 text-xs text-text-tertiary">
                             <span>
                               Rejoint le {new Date(participant.joined_at).toLocaleDateString('fr-FR')}
                             </span>
@@ -1017,7 +1017,7 @@ export function Fives() {
                 {isFivePast(selectedFive.date) ? (
                   <button
                     disabled
-                    className="w-full rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-500 cursor-not-allowed"
+                    className="w-full rounded-lg bg-bg-secondary px-4 py-2 text-sm font-medium text-text-tertiary cursor-not-allowed"
                   >
                     Ce match est terminé
                   </button>
@@ -1031,7 +1031,7 @@ export function Fives() {
                             setShowDetailsModal(false);
                             setShowEditModal(true);
                           }}
-                          className="w-full rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+                          className="w-full rounded-lg border border-border-primary bg-bg-secondary px-4 py-2 text-sm font-medium text-white hover:bg-bg-hover"
                         >
                           Modifier
                         </button>
@@ -1058,7 +1058,7 @@ export function Fives() {
                     ) : selectedFive.isFull ? (
                       <button
                         disabled
-                        className="w-full rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-500"
+                        className="w-full rounded-lg bg-bg-secondary px-4 py-2 text-sm font-medium text-text-tertiary"
                       >
                         Complet
                       </button>
@@ -1083,7 +1083,7 @@ export function Fives() {
         {/* Leave Confirmation Modal */}
         {showLeaveModal && fiveToLeave && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="w-full max-w-md rounded-lg border border-white/10 bg-slate-900 p-6">
+            <div className="w-full max-w-md rounded-lg border border-border-primary bg-bg-modal p-6 shadow-2xl">
               <div className="mb-6 text-center">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-yellow-500/20">
                   <svg
@@ -1100,13 +1100,13 @@ export function Fives() {
                     />
                   </svg>
                 </div>
-                <h2 className="mb-2 text-xl font-bold text-white">
+                <h2 className="mb-2 text-xl font-bold text-text-primary">
                   Se retirer du match ?
                 </h2>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-text-tertiary">
                   Vous êtes sur le point de vous retirer de "{fiveToLeave.title}".
                 </p>
-                <p className="mt-2 text-sm text-slate-400">
+                <p className="mt-2 text-sm text-text-tertiary">
                   Vous pourrez rejoindre à nouveau ce match tant qu'il n'est pas complet.
                 </p>
               </div>
@@ -1118,7 +1118,7 @@ export function Fives() {
                     setFiveToLeave(null);
                   }}
                   disabled={isLeaving}
-                  className="flex-1 rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                  className="flex-1 rounded-lg border border-border-primary px-4 py-2 text-sm font-medium text-white hover:bg-bg-secondary disabled:opacity-50"
                 >
                   Annuler
                 </button>
@@ -1137,7 +1137,7 @@ export function Fives() {
         {/* Delete Confirmation Modal */}
         {showDeleteModal && fiveToDelete && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="w-full max-w-md rounded-lg border border-white/10 bg-slate-900 p-6">
+            <div className="w-full max-w-md rounded-lg border border-border-primary bg-bg-modal p-6 shadow-2xl">
               <div className="mb-6 text-center">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20">
                   <svg
@@ -1154,10 +1154,10 @@ export function Fives() {
                     />
                   </svg>
                 </div>
-                <h2 className="mb-2 text-xl font-bold text-white">
+                <h2 className="mb-2 text-xl font-bold text-text-primary">
                   Supprimer le match ?
                 </h2>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-text-tertiary">
                   Vous êtes sur le point de supprimer "{fiveToDelete.title}".
                 </p>
                 <p className="mt-2 text-sm text-red-400">
@@ -1172,7 +1172,7 @@ export function Fives() {
                     setFiveToDelete(null);
                   }}
                   disabled={isDeleting}
-                  className="flex-1 rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                  className="flex-1 rounded-lg border border-border-primary px-4 py-2 text-sm font-medium text-white hover:bg-bg-secondary disabled:opacity-50"
                 >
                   Annuler
                 </button>
