@@ -35,3 +35,13 @@ export function buildShareLink(shareCode: string, origin?: string) {
   const base = origin || (typeof window !== 'undefined' ? window.location.origin : '');
   return `${base}/fives?shareCode=${shareCode}`;
 }
+
+export function formatUserName(firstName: string | null, lastName: string | null) {
+  if (!firstName && !lastName) return 'Utilisateur';
+  if (!firstName) return lastName || 'Utilisateur';
+  if (!lastName) return firstName;
+
+  // Format as "FirstName L."
+  const lastInitial = lastName.charAt(0).toUpperCase();
+  return `${firstName} ${lastInitial}.`;
+}

@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import { useFiveStore } from '../stores/useFiveStore';
 import { useUserStore } from '../stores/useUserStore';
 import { Layout } from '../components/Layout';
-import { buildShareLink, convertLocalDateTimeToUTC, formatDate, formatDateForInput, formatDuration } from '../utils/format';
+import { buildShareLink, convertLocalDateTimeToUTC, formatDate, formatDateForInput, formatDuration, formatUserName } from '../utils/format';
 
 export function Fives() {
   const {
@@ -292,8 +292,27 @@ export function Fives() {
 
   // Auto-join when arriving with a share link (?shareCode=XXXXXX)
   useEffect(() => {
-    if (!user) return;
     const shareCodeParam = searchParams.get('shareCode');
+
+    // If user is not logged in but there's a shareCode, save it for after login
+    if (!user && shareCodeParam) {
+      localStorage.setItem('pendingShareCode', shareCodeParam.toUpperCase());
+      return;
+    }
+
+    if (!user) return;
+
+    // Check for pending shareCode from before login
+    const pendingCode = localStorage.getItem('pendingShareCode');
+    if (pendingCode) {
+      localStorage.removeItem('pendingShareCode');
+      // Set the shareCode in URL params to trigger the join flow
+      const params = new URLSearchParams(searchParams);
+      params.set('shareCode', pendingCode);
+      setSearchParams(params, { replace: true });
+      return;
+    }
+
     if (!shareCodeParam) return;
 
     const normalizedCode = shareCodeParam.toUpperCase();
@@ -946,8 +965,8 @@ export function Fives() {
 
         {/* Details Modal */}
         {showDetailsModal && selectedFive && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="flex w-full max-w-md flex-col rounded-lg border border-border-primary bg-bg-modal shadow-2xl max-h-[90vh]">
+          <div className="fixed inset-0 z-50 bg-black/70 md:flex md:items-center md:justify-center md:p-4">
+            <div className="flex h-full w-full flex-col bg-bg-modal md:h-auto md:max-w-md md:rounded-lg md:border md:border-border-primary md:shadow-2xl md:max-h-[90vh]">
               {/* Header - Fixed */}
               <div className="flex items-start justify-between border-b border-border-primary p-6 pb-4">
                 <div className="flex-1">
@@ -1059,9 +1078,7 @@ export function Fives() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
                             <p className="truncate text-sm font-medium text-text-primary">
-                              {participant.user.first_name && participant.user.last_name
-                                ? `${participant.user.first_name} ${participant.user.last_name}`
-                                : participant.user.email}
+                              {formatUserName(participant.user.first_name, participant.user.last_name)}
                             </p>
                             {participant.user_id === selectedFive.created_by && (
                               <span className="flex-shrink-0 rounded-full bg-red-500/15 px-1.5 py-0.5 text-[10px] text-red-300">
@@ -1113,9 +1130,7 @@ export function Fives() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-text-primary">
-                            {participant.user.first_name && participant.user.last_name
-                              ? `${participant.user.first_name} ${participant.user.last_name}`
-                              : participant.user.email}
+                            {formatUserName(participant.user.first_name, participant.user.last_name)}
                           </p>
                         </div>
                         {selectedFive.isCreator && (
@@ -1152,14 +1167,14 @@ export function Fives() {
                 ) : (
                   <>
                     {selectedFive.isCreator ? (
-                      <>
+                      <div className="flex gap-2">
                         <button
                           onClick={() => {
                             setFiveToEdit(selectedFive);
                             setShowDetailsModal(false);
                             setShowEditModal(true);
                           }}
-                          className="w-full rounded-lg border border-border-primary bg-bg-secondary px-4 py-2 text-sm font-medium text-white hover:bg-bg-hover"
+                          className="flex-1 rounded-lg border border-border-primary bg-bg-secondary px-4 py-2 text-sm font-medium text-text-primary hover:bg-bg-hover"
                         >
                           Modifier
                         </button>
@@ -1168,11 +1183,14 @@ export function Fives() {
                             setFiveToDelete(selectedFive);
                             setShowDeleteModal(true);
                           }}
-                          className="w-full rounded-lg border border-red-500 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-500/10"
+                          className="rounded-lg border border-red-500 px-3 py-2 text-red-500 hover:bg-red-500/10"
+                          title="Supprimer le match"
                         >
-                          Supprimer le match
+                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
                         </button>
-                      </>
+                      </div>
                     ) : selectedFive.isUserParticipant ? (
                       <button
                         onClick={() => {
@@ -1340,9 +1358,7 @@ export function Fives() {
                 <p className="text-sm text-text-tertiary">
                   Vous êtes sur le point de retirer{' '}
                   <span className="font-medium text-text-primary">
-                    {participantToRemove.user.first_name && participantToRemove.user.last_name
-                      ? `${participantToRemove.user.first_name} ${participantToRemove.user.last_name}`
-                      : participantToRemove.user.email}
+                    {formatUserName(participantToRemove.user.first_name, participantToRemove.user.last_name)}
                   </span>{' '}
                   du match.
                 </p>
