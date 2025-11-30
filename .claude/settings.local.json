@@ -3,7 +3,10 @@
     "allow": [
       "Bash(npx create-expo-app@latest football-five --template blank-typescript)",
       "Bash(npm install:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)"
     ],
     "deny": [],
     "ask": []

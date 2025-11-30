@@ -8,6 +8,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { syncUser } = useUserStore();
   const { theme, setTheme } = useSettingsStore();
   const [openMenu, setOpenMenu] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -50,6 +59,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <span className="text-xl font-bold text-text-primary">Stryver</span>
             </div>
             <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-card px-3 py-2">
+                <svg className="h-4 w-4 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-sm font-mono font-medium text-text-primary tabular-nums">
+                  {currentTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+              </div>
               <div className="relative">
                 <button
                   onClick={() => setOpenMenu((prev) => !prev)}
