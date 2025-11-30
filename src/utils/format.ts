@@ -15,6 +15,13 @@ export function formatDateForInput(dateString: string) {
   return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
 }
 
+export function convertLocalDateTimeToUTC(localDateTime: string) {
+  // localDateTime is in format "YYYY-MM-DDTHH:mm" (from HTML date/time inputs)
+  // We interpret it as local time and convert to UTC ISO string
+  const date = new Date(localDateTime);
+  return date.toISOString();
+}
+
 export function formatDuration(minutes: number | null | undefined) {
   if (!minutes) return 'Durée non définie';
   const hrs = Math.floor(minutes / 60);

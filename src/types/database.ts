@@ -141,18 +141,21 @@ export interface Database {
           five_id: string;
           user_id: string;
           joined_at: string;
+          is_substitute: boolean;
         };
         Insert: {
           id?: string;
           five_id: string;
           user_id: string;
           joined_at?: string;
+          is_substitute?: boolean;
         };
         Update: {
           id?: string;
           five_id?: string;
           user_id?: string;
           joined_at?: string;
+          is_substitute?: boolean;
         };
       };
     };
@@ -177,7 +180,9 @@ export interface GroupWithMembers extends Group {
 
 export interface FiveWithDetails extends Five {
   participantCount?: number;
+  substituteCount?: number;
   isUserParticipant?: boolean;
+  isUserSubstitute?: boolean;
   isFull?: boolean;
   isCreator?: boolean;
   group?: Group;

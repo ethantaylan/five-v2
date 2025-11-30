@@ -9,7 +9,17 @@ async function countParticipants(fiveId: string) {
   const { count } = await supabase
     .from("five_participants")
     .select("*", { count: "exact", head: true })
-    .eq("five_id", fiveId);
+    .eq("five_id", fiveId)
+    .eq("is_substitute", false);
+  return count || 0;
+}
+
+async function countSubstitutes(fiveId: string) {
+  const { count } = await supabase
+    .from("five_participants")
+    .select("*", { count: "exact", head: true })
+    .eq("five_id", fiveId)
+    .eq("is_substitute", true);
   return count || 0;
 }
 
@@ -24,15 +34,18 @@ async function getParticipation(fiveId: string, userId: string) {
 }
 
 async function enrichFive(five: Five, userId: string): Promise<FiveWithDetails> {
-  const [participantCount, participation] = await Promise.all([
+  const [participantCount, substituteCount, participation] = await Promise.all([
     countParticipants(five.id),
+    countSubstitutes(five.id),
     getParticipation(five.id, userId),
   ]);
 
   return {
     ...five,
     participantCount,
+    substituteCount,
     isUserParticipant: !!participation,
+    isUserSubstitute: participation?.is_substitute || false,
     isFull: participantCount >= five.max_players,
     isCreator: five.created_by === userId,
   };
@@ -45,6 +58,7 @@ export async function fetchFiveParticipants(fiveId: string) {
       id,
       user_id,
       joined_at,
+      is_substitute,
       user:users (
         id,
         first_name,
@@ -53,6 +67,7 @@ export async function fetchFiveParticipants(fiveId: string) {
       )
     `)
     .eq("five_id", fiveId)
+    .order("is_substitute", { ascending: true })
     .order("joined_at", { ascending: true });
 
   if (error) throw error;
@@ -121,15 +136,15 @@ export async function joinFive(fiveId: string, userId: string) {
   if (fiveError) throw fiveError;
 
   const currentCount = await countParticipants(fiveId);
-  if (currentCount >= (five as Five).max_players) {
-    throw new Error("Five is full");
-  }
+  const isFull = currentCount >= (five as Five).max_players;
 
+  // If the match is full, join as substitute; otherwise, join as regular player
   const { error: joinError } = await supabase
     .from("five_participants")
     .insert({
       five_id: fiveId,
       user_id: userId,
+      is_substitute: isFull,
     });
   if (joinError) throw joinError;
   return true;

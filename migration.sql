@@ -42,6 +42,13 @@ CREATE INDEX IF NOT EXISTS idx_fives_created_by ON fives(created_by);
 ALTER TABLE fives
 ADD COLUMN IF NOT EXISTS duration_minutes INTEGER DEFAULT 60;
 
+-- 9. Add is_substitute column to five_participants (for handling subs when match is full)
+ALTER TABLE five_participants
+ADD COLUMN IF NOT EXISTS is_substitute BOOLEAN DEFAULT false;
+
+-- 10. Add index on is_substitute for faster queries
+CREATE INDEX IF NOT EXISTS idx_five_participants_is_substitute ON five_participants(five_id, is_substitute);
+
 -- Note: We're keeping the groups tables for now in case you want to add them back later
 -- If you want to completely remove them, run these lines:
 -- DROP TABLE IF EXISTS group_members CASCADE;

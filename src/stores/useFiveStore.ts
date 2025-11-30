@@ -15,6 +15,7 @@ interface FiveParticipantWithUser {
   id: string;
   user_id: string;
   joined_at: string;
+  is_substitute: boolean;
   user: {
     id: string;
     first_name: string | null;
@@ -54,7 +55,7 @@ interface FiveStore {
   joinFiveByShareCode: (
     shareCode: string,
     userId: string
-  ) => Promise<"joined" | "already" | "full" | "notFound" | "error">;
+  ) => Promise<"joined" | "joinedAsSub" | "already" | "notFound" | "error">;
   leaveFive: (fiveId: string, userId: string) => Promise<boolean>;
   deleteFive: (fiveId: string, userId: string) => Promise<boolean>;
   setCurrentFive: (five: FiveWithDetails | null) => void;
@@ -172,12 +173,13 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
         return "already";
       }
 
-      if (five.isFull) {
-        return "full";
-      }
-
+      const isFull = five.isFull;
       const joined = await get().joinFive(five.id, userId);
-      return joined ? "joined" : "error";
+
+      if (!joined) return "error";
+
+      // Return different status based on whether they joined as substitute
+      return isFull ? "joinedAsSub" : "joined";
     } catch (error) {
       console.error("Error joining five by share code:", error);
       return "error";
