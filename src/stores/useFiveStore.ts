@@ -9,6 +9,7 @@ import {
   joinFive as svcJoinFive,
   updateFive as svcUpdateFive,
   leaveFive as svcLeaveFive,
+  removeParticipant as svcRemoveParticipant,
 } from "../services/fiveService";
 
 interface FiveParticipantWithUser {
@@ -57,6 +58,7 @@ interface FiveStore {
     userId: string
   ) => Promise<"joined" | "joinedAsSub" | "already" | "notFound" | "error">;
   leaveFive: (fiveId: string, userId: string) => Promise<boolean>;
+  removeParticipant: (fiveId: string, participantUserId: string, requesterId: string) => Promise<boolean>;
   deleteFive: (fiveId: string, userId: string) => Promise<boolean>;
   setCurrentFive: (five: FiveWithDetails | null) => void;
 }
@@ -65,7 +67,7 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
   fives: [],
   currentFive: null,
   participants: [],
-  loading: false,
+  loading: true,
 
   fetchFiveParticipants: async (fiveId) => {
     try {
@@ -194,6 +196,19 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
       return true;
     } catch (error) {
       console.error("Error leaving five:", error);
+      return false;
+    }
+  },
+
+  removeParticipant: async (fiveId, participantUserId, requesterId) => {
+    try {
+      await svcRemoveParticipant(fiveId, participantUserId, requesterId);
+      await get().fetchFiveParticipants(fiveId);
+      await get().fetchMyFives(requesterId);
+
+      return true;
+    } catch (error) {
+      console.error("Error removing participant:", error);
       return false;
     }
   },

@@ -180,6 +180,27 @@ export async function leaveFive(fiveId: string, userId: string) {
   return true;
 }
 
+export async function removeParticipant(fiveId: string, participantUserId: string, requesterId: string) {
+  // Verify that the requester is the creator
+  const { data: five, error: fiveError } = await supabase
+    .from("fives")
+    .select("created_by")
+    .eq("id", fiveId)
+    .single();
+  if (fiveError) throw fiveError;
+  if (!five) throw new Error("Five not found");
+  if ((five as Five).created_by !== requesterId) throw new Error("Only the creator can remove participants");
+
+  // Remove the participant
+  const { error } = await supabase
+    .from("five_participants")
+    .delete()
+    .eq("five_id", fiveId)
+    .eq("user_id", participantUserId);
+  if (error) throw error;
+  return true;
+}
+
 export async function deleteFive(fiveId: string, userId: string) {
   const { data: five, error: fiveError } = await supabase
     .from("fives")

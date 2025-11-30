@@ -19,6 +19,7 @@ export function Fives() {
     fetchFiveParticipants,
     participants,
     joinFiveByShareCode,
+    removeParticipant,
   } = useFiveStore();
   const { user } = useUserStore();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -29,12 +30,15 @@ export function Fives() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showRemoveParticipantModal, setShowRemoveParticipantModal] = useState(false);
   const [fiveToLeave, setFiveToLeave] = useState<typeof fives[0] | null>(null);
   const [fiveToDelete, setFiveToDelete] = useState<typeof fives[0] | null>(null);
   const [fiveToShare, setFiveToShare] = useState<typeof fives[0] | null>(null);
   const [fiveToEdit, setFiveToEdit] = useState<typeof fives[0] | null>(null);
+  const [participantToRemove, setParticipantToRemove] = useState<typeof participants[0] | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRemovingParticipant, setIsRemovingParticipant] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [selectedFive, setSelectedFive] = useState<typeof fives[0] | null>(null);
@@ -56,6 +60,9 @@ export function Fives() {
   useEffect(() => {
     if (user) {
       fetchMyFives(user.id);
+    } else if (user === null) {
+      // User is not authenticated, stop loading
+      // Note: user store returns null when no user is logged in
     }
   }, [user, fetchMyFives]);
 
@@ -182,6 +189,24 @@ export function Fives() {
     }
   };
 
+  const handleRemoveParticipant = async () => {
+    if (!user || !participantToRemove || !selectedFive || isRemovingParticipant) return;
+
+    setIsRemovingParticipant(true);
+    try {
+      const success = await removeParticipant(selectedFive.id, participantToRemove.user_id, user.id);
+      if (success) {
+        toast.success('Participant retiré du match');
+        setShowRemoveParticipantModal(false);
+        setParticipantToRemove(null);
+      } else {
+        toast.error('Erreur lors du retrait du participant');
+      }
+    } finally {
+      setIsRemovingParticipant(false);
+    }
+  };
+
   const handleShowDetails = async (five: typeof fives[0]) => {
     setSelectedFive(five);
     setShowDetailsModal(true);
@@ -252,7 +277,12 @@ export function Fives() {
     if (aIsPast && !bIsPast) return 1;
     if (!aIsPast && bIsPast) return -1;
 
-    return new Date(a.date).getTime() - new Date(b.date).getTime();
+    // Primary sort by match date
+    const dateDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
+    if (dateDiff !== 0) return dateDiff;
+
+    // Secondary sort by creation date to maintain stable order
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
   });
 
   const filteredFives = sortedFives.filter((five) => {
@@ -1040,6 +1070,20 @@ export function Fives() {
                             )}
                           </div>
                         </div>
+                        {selectedFive.isCreator && participant.user_id !== selectedFive.created_by && (
+                          <button
+                            onClick={() => {
+                              setParticipantToRemove(participant);
+                              setShowRemoveParticipantModal(true);
+                            }}
+                            className="flex-shrink-0 rounded-lg p-1.5 text-text-tertiary hover:bg-red-500/10 hover:text-red-400"
+                            title="Retirer du match"
+                          >
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1074,6 +1118,20 @@ export function Fives() {
                               : participant.user.email}
                           </p>
                         </div>
+                        {selectedFive.isCreator && (
+                          <button
+                            onClick={() => {
+                              setParticipantToRemove(participant);
+                              setShowRemoveParticipantModal(true);
+                            }}
+                            className="flex-shrink-0 rounded-lg p-1.5 text-text-tertiary hover:bg-red-500/10 hover:text-red-400"
+                            title="Retirer de la liste d'attente"
+                          >
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1250,6 +1308,66 @@ export function Fives() {
                   className="flex-1 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isDeleting ? "Suppression..." : "Supprimer"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Remove Participant Confirmation Modal */}
+        {showRemoveParticipantModal && participantToRemove && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div className="w-full max-w-md rounded-lg border border-border-primary bg-bg-modal p-6 shadow-2xl">
+              <div className="mb-6 text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-yellow-500/20">
+                  <svg
+                    className="h-8 w-8 text-yellow-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                </div>
+                <h2 className="mb-2 text-xl font-bold text-text-primary">
+                  Retirer ce participant ?
+                </h2>
+                <p className="text-sm text-text-tertiary">
+                  Vous êtes sur le point de retirer{' '}
+                  <span className="font-medium text-text-primary">
+                    {participantToRemove.user.first_name && participantToRemove.user.last_name
+                      ? `${participantToRemove.user.first_name} ${participantToRemove.user.last_name}`
+                      : participantToRemove.user.email}
+                  </span>{' '}
+                  du match.
+                </p>
+                <p className="mt-2 text-sm text-text-tertiary">
+                  Cette personne pourra rejoindre à nouveau le match si elle le souhaite.
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setShowRemoveParticipantModal(false);
+                    setParticipantToRemove(null);
+                  }}
+                  disabled={isRemovingParticipant}
+                  className="flex-1 rounded-lg border border-border-primary px-4 py-2 text-sm font-medium text-white hover:bg-bg-secondary disabled:opacity-50"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleRemoveParticipant}
+                  disabled={isRemovingParticipant}
+                  className="flex-1 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isRemovingParticipant ? "Retrait..." : "Retirer"}
                 </button>
               </div>
             </div>
