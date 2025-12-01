@@ -1141,25 +1141,25 @@ export function Fives() {
 
               <div className="mt-4">
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-text-primary">
-                    Participants ({(selectedFive.participantCount || 0) + (selectedFive.guestCount || 0)}/{selectedFive.max_players})
-                  </h3>
                   <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-text-primary">
+                      Participants ({(selectedFive.participantCount || 0) + (selectedFive.guestCount || 0)}/{selectedFive.max_players})
+                    </h3>
                     {selectedFive.isFull && (
                       <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">
                         Complet
                       </span>
                     )}
-                    {selectedFive.isCreator && (
-                      <button
-                        onClick={() => setShowAddGuestModal(true)}
-                        className="rounded-lg bg-red-500/10 px-2 py-1 text-xs font-medium text-red-400 hover:bg-red-500/20"
-                        title="Ajouter un participant invité"
-                      >
-                        + Invité
-                      </button>
-                    )}
                   </div>
+                  {selectedFive.isCreator && (
+                    <button
+                      onClick={() => setShowAddGuestModal(true)}
+                      className="rounded-lg bg-red-500/10 px-2 py-1 text-xs font-medium text-red-400 hover:bg-red-500/20"
+                      title="Ajouter un participant invité"
+                    >
+                      + Invité
+                    </button>
+                  )}
                 </div>
 
                 {participants.filter(p => !p.is_substitute).length === 0 && guestParticipants.filter(g => !g.is_substitute).length === 0 ? (
