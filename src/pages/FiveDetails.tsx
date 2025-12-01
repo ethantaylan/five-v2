@@ -82,6 +82,44 @@ export function FiveDetails() {
     setIsDeleting(false);
   };
 
+  const handleAddToCalendar = () => {
+    if (!five) return;
+
+    const startDate = new Date(five.date);
+    const endDate = new Date(startDate.getTime() + five.duration_minutes * 60000);
+
+    const formatICSDate = (date: Date) => {
+      return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    };
+
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Football Five//FR',
+      'BEGIN:VEVENT',
+      `UID:${five.id}@footballfive.app`,
+      `DTSTAMP:${formatICSDate(new Date())}`,
+      `DTSTART:${formatICSDate(startDate)}`,
+      `DTEND:${formatICSDate(endDate)}`,
+      `SUMMARY:${five.title}`,
+      `LOCATION:${five.location}`,
+      `DESCRIPTION:Match de football - ${five.max_players} joueurs`,
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n');
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${five.title.replace(/\s+/g, '_')}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    toast.success('Événement téléchargé !');
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -128,6 +166,15 @@ export function FiveDetails() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               <span>{formatDate(five.date)}</span>
+              <button
+                onClick={handleAddToCalendar}
+                className="ml-1 rounded-md p-1 text-slate-400 hover:bg-slate-800 hover:text-red-400 transition-colors"
+                title="Ajouter au calendrier"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              </button>
             </div>
             <div className="flex items-center gap-2">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

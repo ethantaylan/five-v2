@@ -7,6 +7,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { Fives } from './pages/Fives';
 import { SignIn } from './pages/SignIn';
 import { SignUp } from './pages/SignUp';
+import { Landing } from './pages/Landing';
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -64,11 +65,23 @@ function App() {
             }
           />
 
-          {/* Default redirect to app */}
-          <Route path="/" element={<Navigate to="/fives" replace />} />
+          {/* Landing page - show to non-authenticated users, redirect if authenticated */}
+          <Route
+            path="/"
+            element={
+              <>
+                <SignedIn>
+                  <Navigate to="/fives" replace />
+                </SignedIn>
+                <SignedOut>
+                  <Landing />
+                </SignedOut>
+              </>
+            }
+          />
 
           {/* Default redirect */}
-          <Route path="*" element={<Navigate to="/fives" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <ToastContainer
           position="top-right"
