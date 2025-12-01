@@ -158,6 +158,35 @@ export interface Database {
           is_substitute?: boolean;
         };
       };
+      guest_participants: {
+        Row: {
+          id: string;
+          five_id: string;
+          first_name: string;
+          last_name: string | null;
+          is_substitute: boolean;
+          added_at: string;
+          added_by: string;
+        };
+        Insert: {
+          id?: string;
+          five_id: string;
+          first_name: string;
+          last_name?: string | null;
+          is_substitute?: boolean;
+          added_at?: string;
+          added_by: string;
+        };
+        Update: {
+          id?: string;
+          five_id?: string;
+          first_name?: string;
+          last_name?: string | null;
+          is_substitute?: boolean;
+          added_at?: string;
+          added_by?: string;
+        };
+      };
     };
     Views: {};
     Functions: {};
@@ -171,6 +200,7 @@ export type Group = Database['public']['Tables']['groups']['Row'];
 export type GroupMember = Database['public']['Tables']['group_members']['Row'];
 export type Five = Database['public']['Tables']['fives']['Row'];
 export type FiveParticipant = Database['public']['Tables']['five_participants']['Row'];
+export type GuestParticipant = Database['public']['Tables']['guest_participants']['Row'];
 
 export interface GroupWithMembers extends Group {
   memberCount?: number;
@@ -181,6 +211,8 @@ export interface GroupWithMembers extends Group {
 export interface FiveWithDetails extends Five {
   participantCount?: number;
   substituteCount?: number;
+  guestCount?: number;
+  guestSubstituteCount?: number;
   isUserParticipant?: boolean;
   isUserSubstitute?: boolean;
   isFull?: boolean;

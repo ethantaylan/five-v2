@@ -20,6 +20,10 @@ export function Fives() {
     participants,
     joinFiveByShareCode,
     removeParticipant,
+    fetchGuestParticipants,
+    guestParticipants,
+    addGuestParticipant,
+    removeGuestParticipant,
   } = useFiveStore();
   const { user } = useUserStore();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -31,14 +35,19 @@ export function Fives() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showRemoveParticipantModal, setShowRemoveParticipantModal] = useState(false);
+  const [showAddGuestModal, setShowAddGuestModal] = useState(false);
+  const [showRemoveGuestModal, setShowRemoveGuestModal] = useState(false);
   const [fiveToLeave, setFiveToLeave] = useState<typeof fives[0] | null>(null);
   const [fiveToDelete, setFiveToDelete] = useState<typeof fives[0] | null>(null);
   const [fiveToShare, setFiveToShare] = useState<typeof fives[0] | null>(null);
   const [fiveToEdit, setFiveToEdit] = useState<typeof fives[0] | null>(null);
   const [participantToRemove, setParticipantToRemove] = useState<typeof participants[0] | null>(null);
+  const [guestToRemove, setGuestToRemove] = useState<typeof guestParticipants[0] | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRemovingParticipant, setIsRemovingParticipant] = useState(false);
+  const [isRemovingGuest, setIsRemovingGuest] = useState(false);
+  const [isAddingGuest, setIsAddingGuest] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [selectedFive, setSelectedFive] = useState<typeof fives[0] | null>(null);
@@ -94,7 +103,18 @@ export function Fives() {
       setShowCreateModal(false);
       setCreateDuration(60);
       // Show share code
-      setFiveToShare({ ...result.five, share_code: result.shareCode } as any);
+      setFiveToShare({
+        ...result.five,
+        share_code: result.shareCode,
+        participantCount: 1,
+        substituteCount: 0,
+        guestCount: 0,
+        guestSubstituteCount: 0,
+        isUserParticipant: true,
+        isUserSubstitute: false,
+        isFull: false,
+        isCreator: true
+      });
       setShowShareModal(true);
     } else {
       toast.error('Erreur lors de la création du match');
@@ -207,10 +227,62 @@ export function Fives() {
     }
   };
 
+  const handleAddGuest = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user || !selectedFive || isAddingGuest) return;
+
+    const formData = new FormData(e.currentTarget);
+    const firstName = formData.get('firstName') as string;
+    const lastName = (formData.get('lastName') as string) || null;
+
+    if (!firstName.trim()) {
+      toast.error('Veuillez entrer un prénom');
+      return;
+    }
+
+    setIsAddingGuest(true);
+    try {
+      const success = await addGuestParticipant(selectedFive.id, firstName.trim(), lastName ? lastName.trim() : null, user.id);
+      if (success) {
+        toast.success('Participant invité ajouté avec succès');
+        setShowAddGuestModal(false);
+        await fetchGuestParticipants(selectedFive.id);
+        // Reset form
+        e.currentTarget.reset();
+      } else {
+        toast.error('Erreur lors de l\'ajout du participant invité');
+      }
+    } finally {
+      setIsAddingGuest(false);
+    }
+  };
+
+  const handleRemoveGuest = async () => {
+    if (!user || !guestToRemove || isRemovingGuest) return;
+
+    setIsRemovingGuest(true);
+    try {
+      const success = await removeGuestParticipant(guestToRemove.id, user.id);
+      if (success) {
+        toast.success('Participant invité retiré du match');
+        setShowRemoveGuestModal(false);
+        setGuestToRemove(null);
+        if (selectedFive) {
+          await fetchGuestParticipants(selectedFive.id);
+        }
+      } else {
+        toast.error('Erreur lors du retrait du participant invité');
+      }
+    } finally {
+      setIsRemovingGuest(false);
+    }
+  };
+
   const handleShowDetails = async (five: typeof fives[0]) => {
     setSelectedFive(five);
     setShowDetailsModal(true);
     await fetchFiveParticipants(five.id);
+    await fetchGuestParticipants(five.id);
   };
 
   const handleCopyShareCode = (shareCode: string) => {
@@ -433,7 +505,7 @@ export function Fives() {
                     : 'border-border-primary bg-bg-card hover:border-red-500/50 hover:bg-bg-hover hover:shadow-md'
                 }`}
               >
-                <div className="flex items-start justify-between">
+                <div className="flex items-stretch justify-between gap-4">
                   <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-text-primary">{five.title}</h3>
@@ -461,7 +533,7 @@ export function Fives() {
                         <span>{formatDate(five.date)}</span>
                       </div>
                       {five.location && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
                           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path
                               strokeLinecap="round"
@@ -476,7 +548,7 @@ export function Fives() {
                               d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                           />
                         </svg>
-                        <span>{five.location}</span>
+                        <span className="truncate text-sm" title={five.location}>{five.location}</span>
                       </div>
                     )}
                     <div className="flex items-center gap-2">
@@ -495,12 +567,12 @@ export function Fives() {
                           />
                         </svg>
                         <span className={five.isFull ? 'text-red-400' : ''}>
-                          {five.participantCount}/{five.max_players} joueurs
+                          {(five.participantCount || 0) + (five.guestCount || 0)}/{five.max_players} joueurs
                         </span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col items-end justify-end gap-2 self-end">
                     {/* Actions removed on card for a cleaner list; manage from details modal */}
                     {isPast ? (
                       <button
@@ -935,11 +1007,21 @@ export function Fives() {
                 </div>
                 {fiveToShare.location && (
                   <div className="flex items-center gap-2 text-xs text-text-tertiary">
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    <span>{fiveToShare.location}</span>
+                    <span className="flex-1">{fiveToShare.location}</span>
+                    <button
+                      onClick={() => {
+                        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fiveToShare.location || '')}`;
+                        window.open(mapsUrl, '_blank');
+                      }}
+                      className="flex-shrink-0 rounded-lg bg-red-500/10 px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/20 transition-colors"
+                      title="Ouvrir dans Google Maps"
+                    >
+                      Maps
+                    </button>
                   </div>
                 )}
                 <div className="flex items-center gap-2 text-xs text-text-tertiary">
@@ -1011,11 +1093,21 @@ export function Fives() {
                 </div>
                 {selectedFive.location && (
                   <div className="flex items-center gap-2 text-sm text-text-tertiary">
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    <span>{selectedFive.location}</span>
+                    <span className="flex-1">{selectedFive.location}</span>
+                    <button
+                      onClick={() => {
+                        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedFive.location || '')}`;
+                        window.open(mapsUrl, '_blank');
+                      }}
+                      className="flex-shrink-0 rounded-lg bg-red-500/10 px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/20 transition-colors"
+                      title="Ouvrir dans Google Maps"
+                    >
+                      Maps
+                    </button>
                   </div>
                 )}
                 <div className="space-y-2 rounded-lg bg-bg-secondary/50 p-3">
@@ -1050,16 +1142,27 @@ export function Fives() {
               <div className="mt-4">
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-text-primary">
-                    Participants ({selectedFive.participantCount}/{selectedFive.max_players})
+                    Participants ({(selectedFive.participantCount || 0) + (selectedFive.guestCount || 0)}/{selectedFive.max_players})
                   </h3>
-                  {selectedFive.isFull && (
-                    <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">
-                      Complet
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {selectedFive.isFull && (
+                      <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">
+                        Complet
+                      </span>
+                    )}
+                    {selectedFive.isCreator && (
+                      <button
+                        onClick={() => setShowAddGuestModal(true)}
+                        className="rounded-lg bg-red-500/10 px-2 py-1 text-xs font-medium text-red-400 hover:bg-red-500/20"
+                        title="Ajouter un participant invité"
+                      >
+                        + Invité
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                {participants.filter(p => !p.is_substitute).length === 0 ? (
+                {participants.filter(p => !p.is_substitute).length === 0 && guestParticipants.filter(g => !g.is_substitute).length === 0 ? (
                   <p className="py-3 text-center text-xs text-text-tertiary">
                     Aucun participant
                   </p>
@@ -1078,7 +1181,7 @@ export function Fives() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
                             <p className="truncate text-sm font-medium text-text-primary">
-                              {formatUserName(participant.user.first_name, participant.user.last_name)}
+                              {participant.user.first_name || 'Utilisateur'}
                             </p>
                             {participant.user_id === selectedFive.created_by && (
                               <span className="flex-shrink-0 rounded-full bg-red-500/15 px-1.5 py-0.5 text-[10px] text-red-300">
@@ -1103,15 +1206,51 @@ export function Fives() {
                         )}
                       </div>
                     ))}
+                    {guestParticipants.filter(g => !g.is_substitute).map((guest) => (
+                      <div
+                        key={guest.id}
+                        className="flex items-center gap-2 rounded-lg bg-bg-secondary/50 p-2"
+                      >
+                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-blue-400">
+                          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <p className="truncate text-sm font-medium text-text-primary">
+                              {guest.first_name}{guest.last_name ? ` ${guest.last_name}` : ''}
+                            </p>
+                            <span className="flex-shrink-0 rounded-full bg-blue-500/15 px-1.5 py-0.5 text-[10px] text-blue-300">
+                              Invité
+                            </span>
+                          </div>
+                        </div>
+                        {selectedFive.isCreator && (
+                          <button
+                            onClick={() => {
+                              setGuestToRemove(guest);
+                              setShowRemoveGuestModal(true);
+                            }}
+                            className="flex-shrink-0 rounded-lg p-1.5 text-text-tertiary hover:bg-red-500/10 hover:text-red-400"
+                            title="Retirer du match"
+                          >
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
 
-              {participants.filter(p => p.is_substitute).length > 0 && (
+              {(participants.filter(p => p.is_substitute).length > 0 || guestParticipants.filter(g => g.is_substitute).length > 0) && (
                 <div className="mt-3">
                   <div className="mb-2 flex items-center gap-2">
                     <h3 className="text-sm font-semibold text-text-primary">
-                      Remplaçants ({selectedFive.substituteCount})
+                      Remplaçants ({(selectedFive.substituteCount || 0) + (selectedFive.guestSubstituteCount || 0)})
                     </h3>
                     <span className="rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs text-yellow-400">
                       Liste d'attente
@@ -1130,7 +1269,7 @@ export function Fives() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-text-primary">
-                            {formatUserName(participant.user.first_name, participant.user.last_name)}
+                            {participant.user.first_name || 'Utilisateur'}
                           </p>
                         </div>
                         {selectedFive.isCreator && (
@@ -1138,6 +1277,42 @@ export function Fives() {
                             onClick={() => {
                               setParticipantToRemove(participant);
                               setShowRemoveParticipantModal(true);
+                            }}
+                            className="flex-shrink-0 rounded-lg p-1.5 text-text-tertiary hover:bg-red-500/10 hover:text-red-400"
+                            title="Retirer de la liste d'attente"
+                          >
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    {guestParticipants.filter(g => g.is_substitute).map((guest) => (
+                      <div
+                        key={guest.id}
+                        className="flex items-center gap-2 rounded-lg border border-yellow-500/20 bg-bg-secondary/30 p-2"
+                      >
+                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-yellow-500/20 text-yellow-400">
+                          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <p className="truncate text-sm font-medium text-text-primary">
+                              {guest.first_name}{guest.last_name ? ` ${guest.last_name}` : ''}
+                            </p>
+                            <span className="flex-shrink-0 rounded-full bg-blue-500/15 px-1.5 py-0.5 text-[10px] text-blue-300">
+                              Invité
+                            </span>
+                          </div>
+                        </div>
+                        {selectedFive.isCreator && (
+                          <button
+                            onClick={() => {
+                              setGuestToRemove(guest);
+                              setShowRemoveGuestModal(true);
                             }}
                             className="flex-shrink-0 rounded-lg p-1.5 text-text-tertiary hover:bg-red-500/10 hover:text-red-400"
                             title="Retirer de la liste d'attente"
@@ -1384,6 +1559,130 @@ export function Fives() {
                   className="flex-1 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isRemovingParticipant ? "Retrait..." : "Retirer"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add Guest Participant Modal */}
+        {showAddGuestModal && selectedFive && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div className="w-full max-w-md rounded-lg border border-border-primary bg-bg-modal p-6 shadow-2xl">
+              <div className="mb-6">
+                <h2 className="mb-2 text-xl font-bold text-text-primary">
+                  Ajouter un participant invité
+                </h2>
+                <p className="text-sm text-text-tertiary">
+                  Ajoutez une personne manuellement sans qu'elle ait besoin de créer un compte.
+                </p>
+              </div>
+
+              <form onSubmit={handleAddGuest}>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="firstName" className="block text-sm font-medium text-text-primary mb-1">
+                      Prénom
+                    </label>
+                    <input
+                      type="text"
+                      id="firstName"
+                      name="firstName"
+                      required
+                      className="w-full rounded-lg border border-border-primary bg-bg-secondary px-4 py-2 text-text-primary focus:border-red-500 focus:outline-none"
+                      placeholder="Ex: Jean"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="lastName" className="block text-sm font-medium text-text-primary mb-1">
+                      Nom <span className="text-text-tertiary font-normal">(optionnel)</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="lastName"
+                      name="lastName"
+                      className="w-full rounded-lg border border-border-primary bg-bg-secondary px-4 py-2 text-text-primary focus:border-red-500 focus:outline-none"
+                      placeholder="Ex: Dupont"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddGuestModal(false);
+                    }}
+                    disabled={isAddingGuest}
+                    className="flex-1 rounded-lg border border-border-primary px-4 py-2 text-sm font-medium text-text-primary bg-bg-secondary hover:bg-bg-hover disabled:opacity-50"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isAddingGuest}
+                    className="flex-1 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isAddingGuest ? "Ajout..." : "Ajouter"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Remove Guest Participant Modal */}
+        {showRemoveGuestModal && guestToRemove && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div className="w-full max-w-md rounded-lg border border-border-primary bg-bg-modal p-6 shadow-2xl">
+              <div className="mb-6 text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-yellow-500/20">
+                  <svg
+                    className="h-8 w-8 text-yellow-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                </div>
+                <h2 className="mb-2 text-xl font-bold text-text-primary">
+                  Retirer ce participant invité ?
+                </h2>
+                <p className="text-sm text-text-tertiary">
+                  Vous êtes sur le point de retirer{' '}
+                  <span className="font-medium text-text-primary">
+                    {guestToRemove.first_name}{guestToRemove.last_name ? ` ${guestToRemove.last_name}` : ''}
+                  </span>{' '}
+                  du match.
+                </p>
+                <p className="mt-2 text-sm text-text-tertiary">
+                  Cette personne devra être ajoutée à nouveau manuellement si nécessaire.
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setShowRemoveGuestModal(false);
+                    setGuestToRemove(null);
+                  }}
+                  disabled={isRemovingGuest}
+                  className="flex-1 rounded-lg border border-border-primary px-4 py-2 text-sm font-medium text-white hover:bg-bg-secondary disabled:opacity-50"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleRemoveGuest}
+                  disabled={isRemovingGuest}
+                  className="flex-1 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isRemovingGuest ? "Retrait..." : "Retirer"}
                 </button>
               </div>
             </div>

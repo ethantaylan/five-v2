@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Five, FiveWithDetails } from "../types/database";
+import type { Five, FiveWithDetails, GuestParticipant } from "../types/database";
 import {
   createFive as svcCreateFive,
   deleteFive as svcDeleteFive,
@@ -10,6 +10,9 @@ import {
   updateFive as svcUpdateFive,
   leaveFive as svcLeaveFive,
   removeParticipant as svcRemoveParticipant,
+  fetchGuestParticipants as svcFetchGuestParticipants,
+  addGuestParticipant as svcAddGuestParticipant,
+  removeGuestParticipant as svcRemoveGuestParticipant,
 } from "../services/fiveService";
 
 interface FiveParticipantWithUser {
@@ -29,10 +32,14 @@ interface FiveStore {
   fives: FiveWithDetails[];
   currentFive: FiveWithDetails | null;
   participants: FiveParticipantWithUser[];
+  guestParticipants: GuestParticipant[];
   loading: boolean;
   fetchMyFives: (userId: string) => Promise<void>;
   fetchFiveByShareCode: (shareCode: string, userId: string) => Promise<FiveWithDetails | null>;
   fetchFiveParticipants: (fiveId: string) => Promise<void>;
+  fetchGuestParticipants: (fiveId: string) => Promise<void>;
+  addGuestParticipant: (fiveId: string, firstName: string, lastName: string | null, addedBy: string) => Promise<boolean>;
+  removeGuestParticipant: (guestId: string, requesterId: string) => Promise<boolean>;
   createFive: (
     title: string,
     location: string,
@@ -67,6 +74,7 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
   fives: [],
   currentFive: null,
   participants: [],
+  guestParticipants: [],
   loading: true,
 
   fetchFiveParticipants: async (fiveId) => {
@@ -76,6 +84,39 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
     } catch (error) {
       console.error("Error fetching five participants:", error);
       set({ participants: [] });
+    }
+  },
+
+  fetchGuestParticipants: async (fiveId) => {
+    try {
+      const guestParticipants = await svcFetchGuestParticipants(fiveId);
+      set({ guestParticipants: guestParticipants || [] });
+    } catch (error) {
+      console.error("Error fetching guest participants:", error);
+      set({ guestParticipants: [] });
+    }
+  },
+
+  addGuestParticipant: async (fiveId, firstName, lastName, addedBy) => {
+    try {
+      await svcAddGuestParticipant(fiveId, firstName, lastName, addedBy);
+      await get().fetchGuestParticipants(fiveId);
+      await get().fetchMyFives(addedBy);
+      return true;
+    } catch (error) {
+      console.error("Error adding guest participant:", error);
+      return false;
+    }
+  },
+
+  removeGuestParticipant: async (guestId, requesterId) => {
+    try {
+      await svcRemoveGuestParticipant(guestId, requesterId);
+      await get().fetchMyFives(requesterId);
+      return true;
+    } catch (error) {
+      console.error("Error removing guest participant:", error);
+      return false;
     }
   },
 
