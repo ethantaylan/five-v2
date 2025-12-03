@@ -7,7 +7,6 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { Fives } from './pages/Fives';
 import { SignIn } from './pages/SignIn';
 import { SignUp } from './pages/SignUp';
-import { Landing } from './pages/Landing';
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -74,7 +73,7 @@ function App() {
                   <Navigate to="/fives" replace />
                 </SignedIn>
                 <SignedOut>
-                  <Landing />
+                  <Navigate to="/sign-in" replace />
                 </SignedOut>
               </>
             }
