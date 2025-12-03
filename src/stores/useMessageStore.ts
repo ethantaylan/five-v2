@@ -13,6 +13,7 @@ export interface Message {
     first_name: string | null;
     last_name: string | null;
     email: string;
+    avatar_url?: string | null;
   };
 }
 
@@ -43,7 +44,8 @@ export const useMessageStore = create<MessageStore>((set) => ({
             id,
             first_name,
             last_name,
-            email
+            email,
+            avatar_url
           )
         `)
         .eq('five_id', fiveId)
@@ -75,7 +77,8 @@ export const useMessageStore = create<MessageStore>((set) => ({
             id,
             first_name,
             last_name,
-            email
+            email,
+            avatar_url
           )
         `)
         .single();
@@ -139,7 +142,8 @@ export const useMessageStore = create<MessageStore>((set) => ({
                 id,
                 first_name,
                 last_name,
-                email
+                email,
+                avatar_url
               )
             `)
             .eq('id', payload.new.id)
