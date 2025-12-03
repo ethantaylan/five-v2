@@ -1552,7 +1552,7 @@ export function Fives() {
                       </span>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-2xl font-bold text-text-primary">
+                      <h2 className="font-bold text-text-primary">
                         {selectedFive.title}
                       </h2>
                       {selectedFive.isCreator && (
@@ -1567,7 +1567,7 @@ export function Fives() {
                           const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedFive.location || "")}`;
                           window.open(mapsUrl, "_blank");
                         }}
-                        className="mt-2 inline-flex items-center gap-2 rounded-full border border-transparent bg-bg-secondary/80 px-3 py-1 text-xs font-medium text-text-secondary hover:border-red-500/40 hover:text-red-300 transition-colors"
+                        className="mt-2 inline-flex items-center gap-2 rounded-full border border-transparent bg-bg-secondary/80 py-1 text-xs font-medium text-text-secondary hover:border-red-500/40 hover:text-red-300 transition-colors"
                         title="Ouvrir dans Google Maps"
                       >
                         <svg
@@ -1768,21 +1768,26 @@ export function Fives() {
 
                 {/* Tab Content */}
                 {activeTab === "participants" ? (
-                  <div className="space-y-3 rounded-xl border border-border-primary bg-bg-card/70 p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
+                  <details className="space-y-3 rounded-xl border border-border-primary bg-bg-card/70 p-4" open>
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg bg-bg-secondary/50 px-3 py-2 text-sm font-semibold text-text-primary">
                       <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-semibold text-text-primary">
-                          Participants (
-                          {(selectedFive.participantCount || 0) + (selectedFive.guestCount || 0)}
-                          /{selectedFive.max_players})
-                        </h3>
+                        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                        </svg>
+                        Participants (
+                        {(selectedFive.participantCount || 0) + (selectedFive.guestCount || 0)}/{selectedFive.max_players}
+                        )
                         {selectedFive.isFull && (
                           <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">
                             Complet
                           </span>
                         )}
                       </div>
-                      {selectedFive.isCreator && (
+                      <span className="text-xs text-text-tertiary">Afficher/masquer</span>
+                    </summary>
+
+                    {selectedFive.isCreator && (
+                      <div className="flex justify-end">
                         <button
                           onClick={() => setShowAddGuestModal(true)}
                           className="inline-flex items-center gap-1 rounded-full bg-red-500/15 px-3 py-1 text-xs font-semibold text-red-300 hover:bg-red-500/25"
@@ -1790,8 +1795,8 @@ export function Fives() {
                         >
                           <span className="text-base leading-none">+</span> Invité
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
 
                     {participants.filter((p) => !p.is_substitute).length === 0 &&
                     guestParticipants.filter((g) => !g.is_substitute).length === 0 ? (
@@ -2027,7 +2032,7 @@ export function Fives() {
                         </div>
                       </div>
                     )}
-                  </div>
+                  </details>
                 ) : (
                   <div className="rounded-xl border border-border-primary bg-bg-card/70 p-2">
                     <div className="h-[420px] rounded-lg bg-bg-secondary/70 p-2">
