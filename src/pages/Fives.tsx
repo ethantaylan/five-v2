@@ -32,6 +32,10 @@ export function Fives() {
     guestParticipants,
     addGuestParticipant,
     removeGuestParticipant,
+    moveParticipantToSubstitute,
+    moveSubstituteToParticipant,
+    moveGuestToSubstitute,
+    moveGuestSubstituteToParticipant,
   } = useFiveStore();
   const { user } = useUserStore();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -84,6 +88,7 @@ export function Fives() {
   const [activeTab, setActiveTab] = useState<"participants" | "chat">(
     "participants"
   );
+  const [openParticipantMenu, setOpenParticipantMenu] = useState<string | null>(null);
   const lastAutoJoinCode = useRef<string | null>(null);
 
   useEffect(() => {
@@ -115,6 +120,20 @@ export function Fives() {
       return () => document.removeEventListener("click", handleClickOutside);
     }
   }, [showLocationPopover]);
+
+  // Close participant menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (openParticipantMenu) {
+        setOpenParticipantMenu(null);
+      }
+    };
+
+    if (openParticipantMenu) {
+      document.addEventListener("click", handleClickOutside);
+      return () => document.removeEventListener("click", handleClickOutside);
+    }
+  }, [openParticipantMenu]);
 
   const handleCreateFive = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -401,6 +420,9 @@ export function Fives() {
     return fiveDate < now;
   };
 
+  // Check if user is admin
+  const isAdmin = user?.email === "ethtaylan@gmail.com";
+
   // Sort fives: upcoming first, then past fives
   const sortedFives = [...fives].sort((a, b) => {
     const aIsPast = isFivePast(a.date);
@@ -540,7 +562,10 @@ export function Fives() {
 
           <div className="grid grid-cols-2 gap-2">
             <button
-              onClick={() => setFilter("active")}
+              onClick={() => {
+                setFilter("active");
+                setSelectedFive(null);
+              }}
               className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 filter === "active"
                   ? "bg-red-500/10 text-red-500 border border-red-500/30"
@@ -550,7 +575,10 @@ export function Fives() {
               À venir
             </button>
             <button
-              onClick={() => setFilter("past")}
+              onClick={() => {
+                setFilter("past");
+                setSelectedFive(null);
+              }}
               className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 filter === "past"
                   ? "bg-red-500/10 text-red-500 border border-red-500/30"
@@ -702,7 +730,7 @@ export function Fives() {
                         </div>
                         <div className="flex flex-col items-stretch justify-end gap-2 self-end min-w-[120px]">
                           {/* Actions removed on card for a cleaner list; manage from details modal */}
-                          {five.location && (
+                          {five.location && !isPast && (
                             <div className="relative">
                               <button
                                 onClick={(e) => {
@@ -1485,13 +1513,13 @@ export function Fives() {
         {/* Details Page */}
         {isDetailView && selectedFive && (
           <div className="mt-8 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <button
                 onClick={() => {
                   setShowDetailsModal(false);
                   setSelectedFive(null);
                 }}
-                className="inline-flex items-center gap-2 rounded-full border border-border-primary bg-bg-secondary/80 px-3 py-1.5 text-sm font-semibold text-text-primary hover:bg-bg-hover"
+                className="inline-flex items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary px-3 py-2 text-sm font-medium text-text-primary hover:bg-bg-hover transition-colors"
               >
                 <svg
                   className="h-4 w-4"
@@ -1506,22 +1534,17 @@ export function Fives() {
                     d="M15 19l-7-7 7-7"
                   />
                 </svg>
-                Retour aux matchs
+                Retour
               </button>
-              <div className="flex items-center gap-2 text-xs text-text-tertiary">
-                <span className="rounded-full bg-red-500/15 px-2 py-1 font-mono text-red-300">
-                  #{selectedFive.share_code}
-                </span>
-              </div>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-border-primary bg-bg-modal shadow-2xl relative">
+            <div className="overflow-hidden rounded-lg border border-border-primary bg-bg-card shadow-lg relative">
               <button
                 onClick={() => {
                   setShowDetailsModal(false);
                   setSelectedFive(null);
                 }}
-                className="absolute right-4 top-4 inline-flex items-center justify-center rounded-full border border-border-primary bg-bg-secondary/80 p-2 text-text-tertiary hover:text-text-primary hover:bg-bg-hover"
+                className="absolute right-4 top-4 z-10 inline-flex items-center justify-center rounded-lg border border-border-primary bg-bg-secondary p-2 text-text-tertiary hover:text-text-primary hover:bg-bg-hover transition-colors"
                 aria-label="Fermer"
               >
                 <svg
@@ -1539,39 +1562,23 @@ export function Fives() {
                 </svg>
               </button>
               {/* Header */}
-              <div className="relative overflow-hidden border-b border-border-primary bg-gradient-to-br from-red-500/10 via-bg-card to-bg-modal px-6 py-5">
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(248,113,113,0.18),transparent_45%)]" />
-                <div className="relative flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div className="border-b border-border-primary bg-bg-card px-6 py-5">
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div className="flex-1">
-                    <div className="mb-1 flex flex-wrap items-center gap-2 text-xs uppercase text-text-tertiary">
-                      <span className="rounded-full bg-red-500/15 px-2 py-1 text-red-300">
-                        {formatDate(selectedFive.date)}
-                      </span>
-                      <span className="rounded-full bg-bg-secondary/70 px-2 py-1 text-text-secondary">
-                        {formatDuration(selectedFive.duration_minutes)}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="font-bold text-text-primary">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <h2 className="text-lg font-semibold text-text-primary">
                         {selectedFive.title}
                       </h2>
                       {selectedFive.isCreator && (
-                        <span className="rounded-full bg-red-500/25 px-2 py-0.5 text-xs font-semibold text-red-200">
+                        <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">
                           Créateur
                         </span>
                       )}
                     </div>
-                    {selectedFive.location && (
-                      <button
-                        onClick={() => {
-                          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedFive.location || "")}`;
-                          window.open(mapsUrl, "_blank");
-                        }}
-                        className="mt-2 inline-flex items-center gap-2 rounded-full border border-transparent bg-bg-secondary/80 py-1 text-xs font-medium text-text-secondary hover:border-red-500/40 hover:text-red-300 transition-colors"
-                        title="Ouvrir dans Google Maps"
-                      >
+                    <div className="space-y-1 text-sm text-text-tertiary mt-1">
+                      <div className="flex items-center gap-2">
                         <svg
-                          className="h-4 w-4 text-text-tertiary"
+                          className="h-4 w-4"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -1580,40 +1587,86 @@ export function Fives() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                           />
+                        </svg>
+                        <span>{formatDate(selectedFive.date)}</span>
+                      </div>
+                      {selectedFive.location && !isFivePast(selectedFive.date) && (
+                        <button
+                          onClick={() => {
+                            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedFive.location || "")}`;
+                            window.open(mapsUrl, "_blank");
+                          }}
+                          className="flex items-center gap-2 text-sm text-text-tertiary hover:text-red-400 transition-colors"
+                          title="Ouvrir dans Google Maps"
+                        >
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                          </svg>
+                          <span className="truncate">Adresse disponible</span>
+                        </button>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                        <span className="truncate">{selectedFive.location}</span>
-                      </button>
-                    )}
+                        <span>{formatDuration(selectedFive.duration_minutes)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                          />
+                        </svg>
+                        <span className={selectedFive.isFull ? "text-red-400" : ""}>
+                          {(selectedFive.participantCount || 0) + (selectedFive.guestCount || 0)}/{selectedFive.max_players} joueurs
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-start gap-3 md:items-end">
-                    <div className="flex items-center gap-2 rounded-full border border-border-primary bg-bg-secondary/80 px-3 py-1.5 text-xs font-semibold text-text-secondary shadow-sm">
-                      <svg
-                        className="h-4 w-4 text-red-300"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                        />
-                      </svg>
+                  <div className="flex flex-col items-start gap-2 md:hidden">
+                    <div className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary px-3 py-2">
                       <span className="font-mono text-sm text-text-primary">
                         {selectedFive.share_code}
                       </span>
                       <button
                         onClick={() => handleCopyShareCode(selectedFive.share_code)}
-                        className="rounded-full bg-red-500/15 px-2 py-1 text-[11px] font-semibold text-red-200 hover:bg-red-500/25"
+                        className="rounded-md bg-red-500 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 transition-colors"
                       >
                         Copier
                       </button>
@@ -1623,139 +1676,74 @@ export function Fives() {
               </div>
 
               {/* Body */}
-              <div className="flex-1 space-y-5 px-6 py-5">
-                {/* Quick facts */}
-                <div className="grid gap-3 rounded-xl border border-border-primary bg-bg-card/60 p-4 md:grid-cols-3">
-                  <div className="rounded-lg bg-bg-secondary/60 p-3">
-                    <p className="text-xs text-text-tertiary">Date</p>
-                    <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-text-primary">
-                      <svg
-                        className="h-4 w-4 text-red-300"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
-                      <span>{formatDate(selectedFive.date)}</span>
-                    </div>
-                  </div>
-                  <div className="rounded-lg bg-bg-secondary/60 p-3">
-                    <p className="text-xs text-text-tertiary">Durée</p>
-                    <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-text-primary">
-                      <svg
-                        className="h-4 w-4 text-red-300"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      <span>{formatDuration(selectedFive.duration_minutes)}</span>
-                    </div>
-                  </div>
-                  <div className="rounded-lg bg-bg-secondary/60 p-3">
-                    <p className="text-xs text-text-tertiary">Participants</p>
-                    <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-text-primary">
-                      <svg
-                        className="h-4 w-4 text-red-300"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                        />
-                      </svg>
-                      <span className={selectedFive.isFull ? "text-red-400" : ""}>
-                        {(selectedFive.participantCount || 0) + (selectedFive.guestCount || 0)}
-                        /{selectedFive.max_players}
-                      </span>
-                    </div>
-                    {selectedFive.isFull && (
-                      <p className="mt-1 rounded-md bg-red-500/10 px-2 py-1 text-[11px] font-medium text-red-300">
-                        Liste d'attente ouverte
-                      </p>
-                    )}
-                  </div>
-                </div>
-
+              <div className="flex-1 space-y-4 px-6 py-5">
                 {/* Share card */}
-                <div className="flex flex-col gap-3 rounded-xl border border-border-primary bg-bg-card/70 p-4 shadow-sm md:flex-row md:items-center md:justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-text-primary">
-                      Partager le match
-                    </p>
-                    <p className="text-xs text-text-tertiary">
-                      Lien direct ou code unique, prêt à copier.
-                    </p>
-                  </div>
-                  <div className="flex flex-1 flex-col gap-2 md:flex-row md:items-center md:justify-end">
-                    <div className="flex flex-1 items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary/70 px-3 py-2">
-                      <div className="flex-1 overflow-hidden text-xs text-text-secondary">
-                        <span className="block truncate">
-                          {buildShareLink(selectedFive.share_code)}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => handleCopyShareLink(selectedFive.share_code)}
-                        className="rounded-md bg-red-500/80 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600"
-                      >
-                        Copier le lien
-                      </button>
+                <div className="rounded-lg border border-border-primary bg-bg-card p-4">
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm font-semibold text-text-primary mb-1">
+                        Partager le match
+                      </p>
+                      <p className="text-xs text-text-tertiary">
+                        Lien direct ou code unique, prêt à copier.
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary/70 px-3 py-2">
-                      <span className="font-mono text-sm font-semibold text-text-primary">
-                        {selectedFive.share_code}
-                      </span>
-                      <button
-                        onClick={() => handleCopyShareCode(selectedFive.share_code)}
-                        className="rounded-md bg-red-500/80 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600"
-                      >
-                        Copier
-                      </button>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary px-3 py-2">
+                        <div className="flex-1 overflow-hidden text-xs text-text-secondary">
+                          <span className="block truncate">
+                            {buildShareLink(selectedFive.share_code)}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleCopyShareLink(selectedFive.share_code)}
+                          className="rounded-md bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-600 transition-colors"
+                        >
+                          Copier lien
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary px-3 py-2">
+                        <div className="flex-1 overflow-hidden text-xs text-text-secondary">
+                          <span className="block truncate font-mono font-semibold text-text-primary">
+                            {selectedFive.share_code}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleCopyCode(selectedFive.share_code)}
+                          className="rounded-md bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-600 transition-colors"
+                        >
+                          Copier le code
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Tabs Navigation */}
-                <div className="rounded-full bg-bg-secondary/60 p-1 text-sm font-medium">
+                <div className="rounded-lg bg-bg-secondary p-1 text-sm font-medium">
                   <div className="grid grid-cols-2 gap-1">
                     <button
                       onClick={() => setActiveTab("participants")}
-                      className={`flex items-center justify-center gap-2 rounded-full px-4 py-2 transition-all ${
+                      className={`flex items-center justify-center gap-2 rounded-md px-4 py-2 transition-colors ${
                         activeTab === "participants"
-                          ? "bg-red-500 text-white shadow-sm"
-                          : "text-text-tertiary hover:text-text-secondary"
+                          ? "bg-red-500 text-white"
+                          : "text-text-tertiary hover:text-text-primary"
                       }`}
                     >
                       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
                       </svg>
                       <span>Participants</span>
-                      <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px]">
+                      <span className={`rounded-full px-2 py-0.5 text-xs ${activeTab === "participants" ? "bg-white/20" : "bg-bg-tertiary"}`}>
                         {(selectedFive.participantCount || 0) + (selectedFive.guestCount || 0)}
                       </span>
                     </button>
                     <button
                       onClick={() => setActiveTab("chat")}
-                      className={`flex items-center justify-center gap-2 rounded-full px-4 py-2 transition-all ${
+                      className={`flex items-center justify-center gap-2 rounded-md px-4 py-2 transition-colors ${
                         activeTab === "chat"
-                          ? "bg-red-500 text-white shadow-sm"
-                          : "text-text-tertiary hover:text-text-secondary"
+                          ? "bg-red-500 text-white"
+                          : "text-text-tertiary hover:text-text-primary"
                       }`}
                     >
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1768,29 +1756,28 @@ export function Fives() {
 
                 {/* Tab Content */}
                 {activeTab === "participants" ? (
-                  <details className="space-y-3 rounded-xl border border-border-primary bg-bg-card/70 p-4" open>
-                    <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg bg-bg-secondary/50 px-3 py-2 text-sm font-semibold text-text-primary">
+                  <div className="space-y-3 rounded-lg border border-border-primary bg-bg-card p-4">
+                    <div className="flex items-center justify-between gap-2 pb-3 border-b border-border-primary">
                       <div className="flex items-center gap-2">
                         <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
                         </svg>
-                        Participants (
-                        {(selectedFive.participantCount || 0) + (selectedFive.guestCount || 0)}/{selectedFive.max_players}
-                        )
+                        <span className="text-sm font-semibold text-text-primary">
+                          Participants ({(selectedFive.participantCount || 0) + (selectedFive.guestCount || 0)}/{selectedFive.max_players})
+                        </span>
                         {selectedFive.isFull && (
                           <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">
                             Complet
                           </span>
                         )}
                       </div>
-                      <span className="text-xs text-text-tertiary">Afficher/masquer</span>
-                    </summary>
+                    </div>
 
                     {selectedFive.isCreator && (
                       <div className="flex justify-end">
                         <button
                           onClick={() => setShowAddGuestModal(true)}
-                          className="inline-flex items-center gap-1 rounded-full bg-red-500/15 px-3 py-1 text-xs font-semibold text-red-300 hover:bg-red-500/25"
+                          className="inline-flex items-center gap-1 rounded-lg bg-red-500/15 px-3 py-1.5 text-xs font-medium text-red-300 hover:bg-red-500/25 transition-colors"
                           title="Ajouter un participant invité"
                         >
                           <span className="text-base leading-none">+</span> Invité
@@ -1810,7 +1797,7 @@ export function Fives() {
                           .map((participant) => (
                             <div
                               key={participant.id}
-                              className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary/60 p-2.5"
+                              className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary p-2.5"
                             >
                               <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-red-500/20 text-red-400">
                                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
@@ -1834,28 +1821,64 @@ export function Fives() {
                                 </div>
                               </div>
                               {selectedFive.isCreator && participant.user_id !== selectedFive.created_by && (
-                                <button
-                                  onClick={() => {
-                                    setParticipantToRemove(participant);
-                                    setShowRemoveParticipantModal(true);
-                                  }}
-                                  className="flex-shrink-0 rounded-lg p-1.5 text-text-tertiary hover:bg-red-500/10 hover:text-red-400"
-                                  title="Retirer du match"
-                                >
-                                  <svg
-                                    className="h-4 w-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
+                                <div className="relative">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenParticipantMenu(openParticipantMenu === `user-${participant.id}` ? null : `user-${participant.id}`);
+                                    }}
+                                    className="flex-shrink-0 rounded-lg p-1.5 text-text-tertiary hover:bg-bg-hover hover:text-text-primary transition-colors"
+                                    title="Gérer le participant"
                                   >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M6 18L18 6M6 6l12 12"
-                                    />
-                                  </svg>
-                                </button>
+                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                    </svg>
+                                  </button>
+                                  {openParticipantMenu === `user-${participant.id}` && (
+                                    <div
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="absolute right-0 top-full mt-1 z-50 w-48 rounded-lg border border-border-primary bg-bg-modal shadow-xl"
+                                    >
+                                      <button
+                                        onClick={async () => {
+                                          setOpenParticipantMenu(null);
+                                          if (user && selectedFive) {
+                                            const success = await moveParticipantToSubstitute(selectedFive.id, participant.user_id, user.id);
+                                            if (success) {
+                                              toast.success("Participant déplacé en remplaçant");
+                                              await fetchFiveParticipants(selectedFive.id);
+                                              await fetchGuestParticipants(selectedFive.id);
+                                              // Mettre à jour selectedFive avec les nouvelles données
+                                              const updatedFive = fives.find(f => f.id === selectedFive.id);
+                                              if (updatedFive) setSelectedFive(updatedFive);
+                                            } else {
+                                              toast.error("Erreur lors du déplacement");
+                                            }
+                                          }
+                                        }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-text-primary hover:bg-bg-hover transition-colors rounded-t-lg"
+                                      >
+                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                        </svg>
+                                        Mettre en remplaçant
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setOpenParticipantMenu(null);
+                                          setParticipantToRemove(participant);
+                                          setShowRemoveParticipantModal(true);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors rounded-b-lg"
+                                      >
+                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        Retirer du match
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
                               )}
                             </div>
                           ))}
@@ -1864,7 +1887,7 @@ export function Fives() {
                           .map((guest) => (
                             <div
                               key={guest.id}
-                              className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary/60 p-2.5"
+                              className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary p-2.5"
                             >
                               <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-blue-400">
                                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
@@ -1887,28 +1910,64 @@ export function Fives() {
                                 </div>
                               </div>
                               {selectedFive.isCreator && (
-                                <button
-                                  onClick={() => {
-                                    setGuestToRemove(guest);
-                                    setShowRemoveGuestModal(true);
-                                  }}
-                                  className="flex-shrink-0 rounded-lg p-1.5 text-text-tertiary hover:bg-red-500/10 hover:text-red-400"
-                                  title="Retirer du match"
-                                >
-                                  <svg
-                                    className="h-4 w-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
+                                <div className="relative">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenParticipantMenu(openParticipantMenu === `guest-${guest.id}` ? null : `guest-${guest.id}`);
+                                    }}
+                                    className="flex-shrink-0 rounded-lg p-1.5 text-text-tertiary hover:bg-bg-hover hover:text-text-primary transition-colors"
+                                    title="Gérer le participant"
                                   >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M6 18L18 6M6 6l12 12"
-                                    />
-                                  </svg>
-                                </button>
+                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                    </svg>
+                                  </button>
+                                  {openParticipantMenu === `guest-${guest.id}` && (
+                                    <div
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="absolute right-0 top-full mt-1 z-50 w-48 rounded-lg border border-border-primary bg-bg-modal shadow-xl"
+                                    >
+                                      <button
+                                        onClick={async () => {
+                                          setOpenParticipantMenu(null);
+                                          if (user && selectedFive) {
+                                            const success = await moveGuestToSubstitute(selectedFive.id, guest.id, user.id);
+                                            if (success) {
+                                              toast.success("Invité déplacé en remplaçant");
+                                              await fetchFiveParticipants(selectedFive.id);
+                                              await fetchGuestParticipants(selectedFive.id);
+                                              // Mettre à jour selectedFive avec les nouvelles données
+                                              const updatedFive = fives.find(f => f.id === selectedFive.id);
+                                              if (updatedFive) setSelectedFive(updatedFive);
+                                            } else {
+                                              toast.error("Erreur lors du déplacement");
+                                            }
+                                          }
+                                        }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-text-primary hover:bg-bg-hover transition-colors rounded-t-lg"
+                                      >
+                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                        </svg>
+                                        Mettre en remplaçant
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setOpenParticipantMenu(null);
+                                          setGuestToRemove(guest);
+                                          setShowRemoveGuestModal(true);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors rounded-b-lg"
+                                      >
+                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        Retirer du match
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
                               )}
                             </div>
                           ))}
@@ -1917,7 +1976,7 @@ export function Fives() {
 
                     {(participants.filter((p) => p.is_substitute).length > 0 ||
                       guestParticipants.filter((g) => g.is_substitute).length > 0) && (
-                      <div className="rounded-lg border border-yellow-500/25 bg-yellow-500/5 p-3">
+                      <div className="rounded-lg border border-border-primary bg-bg-secondary/50 p-3">
                         <div className="mb-2 flex items-center gap-2">
                           <h3 className="text-sm font-semibold text-text-primary">
                             Remplaçants (
@@ -1934,7 +1993,7 @@ export function Fives() {
                             .map((participant) => (
                               <div
                                 key={participant.id}
-                                className="flex items-center gap-2 rounded-lg border border-yellow-500/30 bg-bg-secondary/60 p-2.5"
+                                className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary p-2.5"
                               >
                                 <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-yellow-500/20 text-yellow-400">
                                   <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
@@ -1951,28 +2010,69 @@ export function Fives() {
                                   </p>
                                 </div>
                                 {selectedFive.isCreator && (
-                                  <button
-                                    onClick={() => {
-                                      setParticipantToRemove(participant);
-                                      setShowRemoveParticipantModal(true);
-                                    }}
-                                    className="flex-shrink-0 rounded-lg p-1.5 text-text-tertiary hover:bg-red-500/10 hover:text-red-400"
-                                    title="Retirer de la liste d'attente"
-                                  >
-                                    <svg
-                                      className="h-4 w-4"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
+                                  <div className="relative">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenParticipantMenu(openParticipantMenu === `sub-user-${participant.id}` ? null : `sub-user-${participant.id}`);
+                                      }}
+                                      className="flex-shrink-0 rounded-lg p-1.5 text-text-tertiary hover:bg-bg-hover hover:text-text-primary transition-colors"
+                                      title="Gérer le remplaçant"
                                     >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M6 18L18 6M6 6l12 12"
-                                      />
-                                    </svg>
-                                  </button>
+                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                      </svg>
+                                    </button>
+                                    {openParticipantMenu === `sub-user-${participant.id}` && (
+                                      <div
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="absolute right-0 top-full mt-1 z-50 w-48 rounded-lg border border-border-primary bg-bg-modal shadow-xl"
+                                      >
+                                        <button
+                                          onClick={async () => {
+                                            setOpenParticipantMenu(null);
+                                            if (user && selectedFive) {
+                                              try {
+                                                const success = await moveSubstituteToParticipant(selectedFive.id, participant.user_id, user.id);
+                                                if (success) {
+                                                  toast.success("Remplaçant promu en participant");
+                                                  await fetchFiveParticipants(selectedFive.id);
+                                                  await fetchGuestParticipants(selectedFive.id);
+                                                  // Mettre à jour selectedFive avec les nouvelles données
+                                                  const updatedFive = fives.find(f => f.id === selectedFive.id);
+                                                  if (updatedFive) setSelectedFive(updatedFive);
+                                                } else {
+                                                  toast.error("Erreur lors de la promotion");
+                                                }
+                                              } catch (error) {
+                                                const message = error instanceof Error ? error.message : "Erreur lors de la promotion";
+                                                toast.error(message);
+                                              }
+                                            }
+                                          }}
+                                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-text-primary hover:bg-bg-hover transition-colors rounded-t-lg"
+                                        >
+                                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                                          </svg>
+                                          Promouvoir en participant
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            setOpenParticipantMenu(null);
+                                            setParticipantToRemove(participant);
+                                            setShowRemoveParticipantModal(true);
+                                          }}
+                                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors rounded-b-lg"
+                                        >
+                                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                          </svg>
+                                          Retirer de la liste
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                             ))}
@@ -1981,7 +2081,7 @@ export function Fives() {
                             .map((guest) => (
                               <div
                                 key={guest.id}
-                                className="flex items-center gap-2 rounded-lg border border-yellow-500/30 bg-bg-secondary/60 p-2.5"
+                                className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary p-2.5"
                               >
                                 <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-yellow-500/20 text-yellow-400">
                                   <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
@@ -2004,38 +2104,79 @@ export function Fives() {
                                   </div>
                                 </div>
                                 {selectedFive.isCreator && (
-                                  <button
-                                    onClick={() => {
-                                      setGuestToRemove(guest);
-                                      setShowRemoveGuestModal(true);
-                                    }}
-                                    className="flex-shrink-0 rounded-lg p-1.5 text-text-tertiary hover:bg-red-500/10 hover:text-red-400"
-                                    title="Retirer de la liste d'attente"
-                                  >
-                                    <svg
-                                      className="h-4 w-4"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
+                                  <div className="relative">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenParticipantMenu(openParticipantMenu === `sub-guest-${guest.id}` ? null : `sub-guest-${guest.id}`);
+                                      }}
+                                      className="flex-shrink-0 rounded-lg p-1.5 text-text-tertiary hover:bg-bg-hover hover:text-text-primary transition-colors"
+                                      title="Gérer le remplaçant"
                                     >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M6 18L18 6M6 6l12 12"
-                                      />
-                                    </svg>
-                                  </button>
+                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                      </svg>
+                                    </button>
+                                    {openParticipantMenu === `sub-guest-${guest.id}` && (
+                                      <div
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="absolute right-0 top-full mt-1 z-50 w-48 rounded-lg border border-border-primary bg-bg-modal shadow-xl"
+                                      >
+                                        <button
+                                          onClick={async () => {
+                                            setOpenParticipantMenu(null);
+                                            if (user && selectedFive) {
+                                              try {
+                                                const success = await moveGuestSubstituteToParticipant(selectedFive.id, guest.id, user.id);
+                                                if (success) {
+                                                  toast.success("Invité promu en participant");
+                                                  await fetchFiveParticipants(selectedFive.id);
+                                                  await fetchGuestParticipants(selectedFive.id);
+                                                  // Mettre à jour selectedFive avec les nouvelles données
+                                                  const updatedFive = fives.find(f => f.id === selectedFive.id);
+                                                  if (updatedFive) setSelectedFive(updatedFive);
+                                                } else {
+                                                  toast.error("Erreur lors de la promotion");
+                                                }
+                                              } catch (error) {
+                                                const message = error instanceof Error ? error.message : "Erreur lors de la promotion";
+                                                toast.error(message);
+                                              }
+                                            }
+                                          }}
+                                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-text-primary hover:bg-bg-hover transition-colors rounded-t-lg"
+                                        >
+                                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                                          </svg>
+                                          Promouvoir en participant
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            setOpenParticipantMenu(null);
+                                            setGuestToRemove(guest);
+                                            setShowRemoveGuestModal(true);
+                                          }}
+                                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors rounded-b-lg"
+                                        >
+                                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                          </svg>
+                                          Retirer de la liste
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                             ))}
                         </div>
                       </div>
                     )}
-                  </details>
+                  </div>
                 ) : (
-                  <div className="rounded-xl border border-border-primary bg-bg-card/70 p-2">
-                    <div className="h-[420px] rounded-lg bg-bg-secondary/70 p-2">
+                  <div className="rounded-lg border border-border-primary bg-bg-card p-4">
+                    <div className="h-[420px] rounded-lg bg-bg-secondary p-2">
                       <FiveChat fiveId={selectedFive.id} isCreator={!!selectedFive.isCreator} />
                     </div>
                   </div>
@@ -2043,7 +2184,7 @@ export function Fives() {
               </div>
 
               {/* Footer */}
-              <div className="border-t border-border-primary bg-bg-card/70 p-6">
+              <div className="border-t border-border-primary bg-bg-card p-6">
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div className="text-xs text-text-tertiary">
                     {selectedFive.isFull
@@ -2051,7 +2192,7 @@ export function Fives() {
                       : "Les places se remplissent vite, agissez maintenant."}
                   </div>
                   <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row">
-                    {isFivePast(selectedFive.date) ? (
+                    {isFivePast(selectedFive.date) && !isAdmin ? (
                       <button
                         disabled
                         className="w-full rounded-lg bg-bg-secondary px-4 py-2 text-sm font-medium text-text-tertiary cursor-not-allowed md:min-w-[180px]"
@@ -2066,7 +2207,7 @@ export function Fives() {
                             setShowDetailsModal(false);
                             setShowEditModal(true);
                           }}
-                          className="w-full rounded-lg border border-border-primary bg-bg-secondary px-4 py-2 text-sm font-semibold text-text-primary hover:bg-bg-hover md:min-w-[160px]"
+                          className="w-full rounded-lg border border-border-primary bg-bg-secondary px-4 py-2 text-sm font-medium text-text-primary hover:bg-bg-hover transition-colors md:min-w-[160px]"
                         >
                           Modifier
                         </button>
@@ -2075,19 +2216,30 @@ export function Fives() {
                             setFiveToDelete(selectedFive);
                             setShowDeleteModal(true);
                           }}
-                          className="rounded-lg border border-red-500 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-500/10 md:min-w-[52px]"
+                          className="rounded-lg border border-red-500 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors md:min-w-[52px]"
                           title="Supprimer le match"
                         >
                           Supprimer
                         </button>
                       </>
+                    ) : isAdmin ? (
+                      <button
+                        onClick={() => {
+                          setFiveToDelete(selectedFive);
+                          setShowDeleteModal(true);
+                        }}
+                        className="w-full rounded-lg border border-red-500 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors md:min-w-[200px]"
+                        title="Supprimer le match (Admin)"
+                      >
+                        Supprimer (Admin)
+                      </button>
                     ) : selectedFive.isUserParticipant ? (
                       <button
                         onClick={() => {
                           setFiveToLeave(selectedFive);
                           setShowLeaveModal(true);
                         }}
-                        className="w-full rounded-lg border border-red-500 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-500/10 md:min-w-[200px]"
+                        className="w-full rounded-lg border border-red-500 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors md:min-w-[200px]"
                       >
                         {selectedFive.isUserSubstitute
                           ? "Se retirer de la liste d'attente"
@@ -2099,7 +2251,7 @@ export function Fives() {
                           handleJoinFive(selectedFive.id);
                           setShowDetailsModal(false);
                         }}
-                        className={`w-full rounded-lg px-4 py-2 text-sm font-semibold text-white md:min-w-[200px] ${
+                        className={`w-full rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors md:min-w-[200px] ${
                           selectedFive.isFull ? "bg-yellow-500 hover:bg-yellow-600" : "bg-red-500 hover:bg-red-600"
                         }`}
                       >

@@ -92,6 +92,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 />
                 <span className="text-xl font-bold text-text-primary">Stryver</span>
               </a>
+              <span className="rounded-md bg-red-500/15 px-2 py-0.5 text-xs font-semibold text-red-400 border border-red-500/30">
+                Beta
+              </span>
             </nav>
             <div className="flex items-center gap-3" aria-label="Actions utilisateur">
               <div className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-card px-3 py-2" aria-live="polite">

@@ -13,6 +13,10 @@ import {
   fetchGuestParticipants as svcFetchGuestParticipants,
   addGuestParticipant as svcAddGuestParticipant,
   removeGuestParticipant as svcRemoveGuestParticipant,
+  moveParticipantToSubstitute as svcMoveParticipantToSubstitute,
+  moveSubstituteToParticipant as svcMoveSubstituteToParticipant,
+  moveGuestToSubstitute as svcMoveGuestToSubstitute,
+  moveGuestSubstituteToParticipant as svcMoveGuestSubstituteToParticipant,
 } from "../services/fiveService";
 
 interface FiveParticipantWithUser {
@@ -40,6 +44,10 @@ interface FiveStore {
   fetchGuestParticipants: (fiveId: string) => Promise<void>;
   addGuestParticipant: (fiveId: string, firstName: string, lastName: string | null, addedBy: string) => Promise<boolean>;
   removeGuestParticipant: (guestId: string, requesterId: string) => Promise<boolean>;
+  moveParticipantToSubstitute: (fiveId: string, participantUserId: string, requesterId: string) => Promise<boolean>;
+  moveSubstituteToParticipant: (fiveId: string, participantUserId: string, requesterId: string) => Promise<boolean>;
+  moveGuestToSubstitute: (fiveId: string, guestId: string, requesterId: string) => Promise<boolean>;
+  moveGuestSubstituteToParticipant: (fiveId: string, guestId: string, requesterId: string) => Promise<boolean>;
   createFive: (
     title: string,
     location: string,
@@ -116,6 +124,54 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
       return true;
     } catch (error) {
       console.error("Error removing guest participant:", error);
+      return false;
+    }
+  },
+
+  moveParticipantToSubstitute: async (fiveId, participantUserId, requesterId) => {
+    try {
+      await svcMoveParticipantToSubstitute(fiveId, participantUserId, requesterId);
+      await get().fetchFiveParticipants(fiveId);
+      await get().fetchMyFives(requesterId);
+      return true;
+    } catch (error) {
+      console.error("Error moving participant to substitute:", error);
+      return false;
+    }
+  },
+
+  moveSubstituteToParticipant: async (fiveId, participantUserId, requesterId) => {
+    try {
+      await svcMoveSubstituteToParticipant(fiveId, participantUserId, requesterId);
+      await get().fetchFiveParticipants(fiveId);
+      await get().fetchMyFives(requesterId);
+      return true;
+    } catch (error) {
+      console.error("Error moving substitute to participant:", error);
+      return false;
+    }
+  },
+
+  moveGuestToSubstitute: async (fiveId, guestId, requesterId) => {
+    try {
+      await svcMoveGuestToSubstitute(guestId, requesterId);
+      await get().fetchGuestParticipants(fiveId);
+      await get().fetchMyFives(requesterId);
+      return true;
+    } catch (error) {
+      console.error("Error moving guest to substitute:", error);
+      return false;
+    }
+  },
+
+  moveGuestSubstituteToParticipant: async (fiveId, guestId, requesterId) => {
+    try {
+      await svcMoveGuestSubstituteToParticipant(guestId, requesterId);
+      await get().fetchGuestParticipants(fiveId);
+      await get().fetchMyFives(requesterId);
+      return true;
+    } catch (error) {
+      console.error("Error moving guest substitute to participant:", error);
       return false;
     }
   },
