@@ -2199,40 +2199,47 @@ export function Fives() {
                       >
                         Ce match est terminé
                       </button>
-                    ) : selectedFive.isCreator ? (
+                    ) : selectedFive.isCreator || isAdmin ? (
                       <>
-                        <button
-                          onClick={() => {
-                            setFiveToEdit(selectedFive);
-                            setShowDetailsModal(false);
-                            setShowEditModal(true);
-                          }}
-                          className="w-full rounded-lg border border-border-primary bg-bg-secondary px-4 py-2 text-sm font-medium text-text-primary hover:bg-bg-hover transition-colors md:min-w-[160px]"
-                        >
-                          Modifier
-                        </button>
-                        <button
-                          onClick={() => {
-                            setFiveToDelete(selectedFive);
-                            setShowDeleteModal(true);
-                          }}
-                          className="rounded-lg border border-red-500 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors md:min-w-[52px]"
-                          title="Supprimer le match"
-                        >
-                          Supprimer
-                        </button>
+                        {selectedFive.isCreator && (
+                          <button
+                            onClick={() => {
+                              setFiveToEdit(selectedFive);
+                              setShowDetailsModal(false);
+                              setShowEditModal(true);
+                            }}
+                            className="w-full rounded-lg border border-border-primary bg-bg-secondary px-4 py-2 text-sm font-medium text-text-primary hover:bg-bg-hover transition-colors md:min-w-[160px]"
+                          >
+                            Modifier
+                          </button>
+                        )}
+                        <div className="flex w-full flex-row flex-wrap gap-2 md:w-auto">
+                          {selectedFive.isCreator && (
+                            <button
+                              onClick={() => {
+                                setFiveToDelete(selectedFive);
+                                setShowDeleteModal(true);
+                              }}
+                              className="w-full rounded-lg border border-red-500 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors md:min-w-[52px]"
+                              title="Supprimer le match"
+                            >
+                              Supprimer
+                            </button>
+                          )}
+                          {isAdmin && (
+                            <button
+                              onClick={() => {
+                                setFiveToDelete(selectedFive);
+                                setShowDeleteModal(true);
+                              }}
+                              className="w-full rounded-lg border border-red-500 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors md:min-w-[200px]"
+                              title="Supprimer le match (Admin)"
+                            >
+                              Supprimer (Admin)
+                            </button>
+                          )}
+                        </div>
                       </>
-                    ) : isAdmin ? (
-                      <button
-                        onClick={() => {
-                          setFiveToDelete(selectedFive);
-                          setShowDeleteModal(true);
-                        }}
-                        className="w-full rounded-lg border border-red-500 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors md:min-w-[200px]"
-                        title="Supprimer le match (Admin)"
-                      >
-                        Supprimer (Admin)
-                      </button>
                     ) : selectedFive.isUserParticipant ? (
                       <button
                         onClick={() => {
