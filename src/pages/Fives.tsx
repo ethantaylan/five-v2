@@ -1679,21 +1679,6 @@ export function Fives() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-col items-start gap-2 md:hidden">
-                    <div className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary px-3 py-2">
-                      <span className="font-mono text-sm text-text-primary">
-                        {selectedFive.share_code}
-                      </span>
-                      <button
-                        onClick={() =>
-                          handleCopyShareCode(selectedFive.share_code)
-                        }
-                        className="rounded-md bg-red-500 px-2 py-1 text-xs font-medium text-white hover:bg-red-600 transition-colors"
-                      >
-                        Copier
-                      </button>
-                    </div>
-                  </div>
                 </div>
               </div>
 
@@ -2517,6 +2502,19 @@ export function Fives() {
                             className="w-full rounded-lg border border-border-primary bg-bg-secondary px-4 py-2 text-sm font-medium text-text-primary hover:bg-bg-hover transition-colors md:min-w-[160px]"
                           >
                             Modifier
+                          </button>
+                        )}
+                        {isAdmin && !selectedFive.isCreator && (
+                          <button
+                            onClick={() => {
+                              setFiveToEdit(selectedFive);
+                              setShowDetailsModal(false);
+                              setShowEditModal(true);
+                            }}
+                            className="w-full rounded-lg border border-border-primary bg-bg-secondary px-4 py-2 text-sm font-medium text-text-primary hover:bg-bg-hover transition-colors md:min-w-[200px]"
+                            title="Modifier le match (Admin)"
+                          >
+                            Modifier (Admin)
                           </button>
                         )}
                         <div className="flex w-full flex-row flex-wrap gap-2 md:w-auto">
