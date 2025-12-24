@@ -1,7 +1,7 @@
 {
-  "name": "Football Five - Organisez vos matchs",
-  "short_name": "Football Five",
-  "description": "La plateforme ultime pour créer, gérer et rejoindre des matchs de football entre amis",
+  "name": "Stryver - Organisez vos événements sportifs",
+  "short_name": "Stryver",
+  "description": "La plateforme ultime pour créer, gérer et rejoindre des événements sportifs entre amis",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",

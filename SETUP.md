@@ -6,7 +6,7 @@
 
 1. Allez sur [https://clerk.com](https://clerk.com)
 2. Créez un compte gratuit
-3. Créez une nouvelle application "Football 5c5"
+3. Créez une nouvelle application "Stryver"
 4. Dans **Configure → Paths**:
    - Sign-in URL: `/sign-in`
    - Sign-up URL: `/sign-up`
@@ -17,7 +17,7 @@
 
 1. Allez sur [https://supabase.com](https://supabase.com)
 2. Créez un compte gratuit
-3. Créez un nouveau projet "football-5c5"
+3. Créez un nouveau projet "stryver"
 4. Notez votre mot de passe de base de données (vous en aurez besoin)
 5. Attendez que le projet soit créé (2-3 minutes)
 
@@ -87,11 +87,11 @@ L'application devrait s'ouvrir sur `http://localhost:5173`
 2. Créez un groupe public "Test"
 3. Vous devriez voir le groupe dans la liste
 
-### Test 4: Créer un five
+### Test 4: Créer un événement
 1. Cliquez sur votre groupe
-2. Cliquez sur "+" pour créer un five
+2. Cliquez sur "+" pour créer un événement
 3. Remplissez le formulaire
-4. Le five devrait apparaître dans la liste
+4. L'événement devrait apparaître dans la liste
 
 ## Problèmes courants
 
@@ -110,7 +110,7 @@ L'application devrait s'ouvrir sur `http://localhost:5173`
 - Vérifiez les policies RLS dans Supabase
 - Regardez la console du navigateur pour les erreurs
 
-### Impossible de créer un groupe/five
+### Impossible de créer un groupe/événement
 - Vérifiez que vous êtes bien connecté
 - Vérifiez que les policies RLS sont activées
 - Vérifiez les logs dans la console
@@ -127,6 +127,6 @@ Si vous rencontrez des problèmes:
 Une fois l'application fonctionnelle:
 - [ ] Invitez des amis à tester
 - [ ] Créez plusieurs groupes
-- [ ] Organisez votre premier five
+- [ ] Organisez votre premier événement sportif
 - [ ] Testez les groupes privés avec code d'invitation
 - [ ] Explorez les améliorations possibles (voir README.md)
