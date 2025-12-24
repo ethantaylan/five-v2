@@ -6,7 +6,6 @@ import { useUserStore } from "../stores/useUserStore";
 import { Layout } from "../components/Layout";
 import { FiveChat } from "../components/FiveChat";
 import {
-  buildShareLink,
   buildEventLink,
   convertLocalDateTimeToUTC,
   formatDate,

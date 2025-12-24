@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
 import { toast } from 'react-toastify';
 import { Layout } from '../components/Layout';
-import { fetchFiveById, joinFive, fetchFiveParticipants, fetchGuestParticipants } from '../services/fiveService';
+import { fetchFiveById, joinFive } from '../services/fiveService';
 import { formatDate, formatDuration } from '../utils/format';
 import type { FiveWithDetails } from '../types/database';
 
@@ -48,7 +48,7 @@ export function EventPage() {
           meta.setAttribute('content', content);
         };
 
-        const description = `${eventData.title} - ${formatDate(eventData.date)} à ${eventData.location}. ${eventData.participantCount + eventData.guestCount}/${eventData.max_players} participants.`;
+        const description = `${eventData.title} - ${formatDate(eventData.date)} à ${eventData.location}. ${(eventData.participantCount || 0) + (eventData.guestCount || 0)}/${eventData.max_players} participants.`;
 
         setMeta('name', 'description', description);
         setMeta('property', 'og:title', `${eventData.title} | Stryver`);
@@ -162,7 +162,7 @@ export function EventPage() {
                 <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
               </svg>
               <span className="text-lg">
-                {event.participantCount + event.guestCount} / {event.max_players} participants
+                {(event.participantCount || 0) + (event.guestCount || 0)} / {event.max_players} participants
               </span>
             </div>
           </div>
