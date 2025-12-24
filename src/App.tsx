@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Fives } from './pages/Fives';
+import { EventPage } from './pages/EventPage';
 import { SignIn } from './pages/SignIn';
 import { SignUp } from './pages/SignUp';
 
@@ -62,6 +63,12 @@ function App() {
                 <Fives />
               </ProtectedRoute>
             }
+          />
+
+          {/* Event page - public but better with auth */}
+          <Route
+            path="/evenement/:id"
+            element={<EventPage />}
           />
 
           {/* Landing page - show to non-authenticated users, redirect if authenticated */}

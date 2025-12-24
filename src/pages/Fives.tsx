@@ -7,6 +7,7 @@ import { Layout } from "../components/Layout";
 import { FiveChat } from "../components/FiveChat";
 import {
   buildShareLink,
+  buildEventLink,
   convertLocalDateTimeToUTC,
   formatDate,
   formatDateForInput,
@@ -369,8 +370,8 @@ export function Fives() {
     toast.success("Code copié !");
   };
 
-  const handleCopyShareLink = (shareCode: string) => {
-    navigator.clipboard.writeText(buildShareLink(shareCode));
+  const handleCopyShareLink = (eventId: string) => {
+    navigator.clipboard.writeText(buildEventLink(eventId));
     toast.success("Lien copié !");
   };
 
@@ -1368,11 +1369,11 @@ export function Fives() {
                 </div>
                 <div className="mb-3 overflow-hidden rounded-lg border border-red-500/30 bg-bg-modal/50 px-3 py-3">
                   <span className="block break-all text-sm text-text-primary">
-                    {buildShareLink(fiveToShare.share_code)}
+                    {buildEventLink(fiveToShare.id)}
                   </span>
                 </div>
                 <button
-                  onClick={() => handleCopyShareLink(fiveToShare.share_code)}
+                  onClick={() => handleCopyShareLink(fiveToShare.id)}
                   className="w-full rounded-lg bg-red-500 px-4 py-3 text-sm font-semibold text-white hover:bg-red-600"
                 >
                   <div className="flex items-center justify-center gap-2">
@@ -1699,12 +1700,12 @@ export function Fives() {
                       <div className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary px-3 py-2">
                         <div className="flex-1 overflow-hidden text-xs text-text-secondary">
                           <span className="block truncate">
-                            {buildShareLink(selectedFive.share_code)}
+                            {buildEventLink(selectedFive.id)}
                           </span>
                         </div>
                         <button
                           onClick={() =>
-                            handleCopyShareLink(selectedFive.share_code)
+                            handleCopyShareLink(selectedFive.id)
                           }
                           className="rounded-md bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-600 transition-colors"
                         >
