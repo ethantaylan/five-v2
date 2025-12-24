@@ -6,7 +6,7 @@ import { useUserStore } from "../stores/useUserStore";
 import { Layout } from "../components/Layout";
 import { FiveChat } from "../components/FiveChat";
 import {
-  buildShareLink,
+  buildEventLink,
   convertLocalDateTimeToUTC,
   formatDate,
   formatDateForInput,
@@ -161,7 +161,7 @@ export function Fives() {
     );
 
     if (result) {
-      toast.success("Match créé avec succès !");
+      toast.success("Événement créé avec succès !");
       setShowCreateModal(false);
       setCreateDuration(60);
       // Show share code
@@ -179,7 +179,7 @@ export function Fives() {
       });
       setShowShareModal(true);
     } else {
-      toast.error("Erreur lors de la création du match");
+      toast.error("Erreur lors de la création de l'événement");
     }
     setIsCreating(false);
   };
@@ -195,7 +195,7 @@ export function Fives() {
         user.id
       );
       if (status === "joined") {
-        toast.success("Vous avez rejoint le match !");
+        toast.success("Vous avez rejoint l'événement !");
         setShowJoinModal(false);
         setJoinCode("");
       } else if (status === "joinedAsSub") {
@@ -205,13 +205,13 @@ export function Fives() {
         setShowJoinModal(false);
         setJoinCode("");
       } else if (status === "already") {
-        toast.info("Vous êtes déjà inscrit à ce match");
+        toast.info("Vous êtes déjà inscrit à cet événement");
         setShowJoinModal(false);
         setJoinCode("");
       } else if (status === "notFound") {
         toast.error("Code invalide");
       } else {
-        toast.error("Erreur lors de la tentative de rejoindre le match");
+        toast.error("Erreur lors de la tentative de rejoindre l'événement");
       }
     } finally {
       setIsJoining(false);
@@ -229,10 +229,10 @@ export function Fives() {
           "Vous avez rejoint la liste d'attente en tant que remplaçant !"
         );
       } else {
-        toast.success("Vous avez rejoint le match !");
+        toast.success("Vous avez rejoint l'événement !");
       }
     } else {
-      toast.error("Erreur lors de la tentative de rejoindre le match");
+      toast.error("Erreur lors de la tentative de rejoindre l'événement");
     }
   };
 
@@ -243,14 +243,14 @@ export function Fives() {
     try {
       const success = await leaveFive(fiveToLeave.id, user.id);
       if (success) {
-        toast.info("Vous avez quitté le match");
+        toast.info("Vous avez quitté l'événement");
         setShowLeaveModal(false);
         setFiveToLeave(null);
         if (showDetailsModal) {
           setShowDetailsModal(false);
         }
       } else {
-        toast.error("Erreur lors de la tentative de quitter le match");
+        toast.error("Erreur lors de la tentative de quitter l'événement");
       }
     } finally {
       setIsLeaving(false);
@@ -264,14 +264,14 @@ export function Fives() {
     try {
       const success = await deleteFive(fiveToDelete.id, user.id);
       if (success) {
-        toast.success("Match supprimé");
+        toast.success("Événement supprimé");
         setShowDeleteModal(false);
         setFiveToDelete(null);
         if (showDetailsModal) {
           setShowDetailsModal(false);
         }
       } else {
-        toast.error("Erreur lors de la suppression du match");
+        toast.error("Erreur lors de la suppression de l'événement");
       }
     } finally {
       setIsDeleting(false);
@@ -290,7 +290,7 @@ export function Fives() {
         user.id
       );
       if (success) {
-        toast.success("Participant retiré du match");
+        toast.success("Participant retiré de l'événement");
         setShowRemoveParticipantModal(false);
         setParticipantToRemove(null);
       } else {
@@ -343,7 +343,7 @@ export function Fives() {
     try {
       const success = await removeGuestParticipant(guestToRemove.id, user.id);
       if (success) {
-        toast.success("Participant invité retiré du match");
+        toast.success("Participant invité retiré de l'événement");
         setShowRemoveGuestModal(false);
         setGuestToRemove(null);
         if (selectedFive) {
@@ -369,8 +369,8 @@ export function Fives() {
     toast.success("Code copié !");
   };
 
-  const handleCopyShareLink = (shareCode: string) => {
-    navigator.clipboard.writeText(buildShareLink(shareCode));
+  const handleCopyShareLink = (eventId: string) => {
+    navigator.clipboard.writeText(buildEventLink(eventId));
     toast.success("Lien copié !");
   };
 
@@ -402,14 +402,14 @@ export function Fives() {
       );
 
       if (updated) {
-        toast.success("Match mis à jour");
+        toast.success("Événement mis à jour");
         setShowEditModal(false);
         setFiveToEdit(null);
         setSelectedFive((prev) =>
           prev && prev.id === updated.id ? { ...prev, ...updated } : prev
         );
       } else {
-        toast.error("Erreur lors de la mise à jour du match");
+        toast.error("Erreur lors de la mise à jour de l'événement");
       }
     } finally {
       setIsUpdating(false);
@@ -480,7 +480,7 @@ export function Fives() {
     const attemptJoin = async () => {
       const status = await joinFiveByShareCode(normalizedCode, user.id);
       if (status === "joined") {
-        toast.success("Vous avez rejoint le match via le lien !");
+        toast.success("Vous avez rejoint l'événement via le lien !");
         const params = new URLSearchParams(searchParams);
         params.delete("shareCode");
         setSearchParams(params, { replace: true });
@@ -492,12 +492,12 @@ export function Fives() {
         params.delete("shareCode");
         setSearchParams(params, { replace: true });
       } else if (status === "already") {
-        toast.info("Vous participez déjà à ce match");
+        toast.info("Vous participez déjà à cet événement");
         const params = new URLSearchParams(searchParams);
         params.delete("shareCode");
         setSearchParams(params, { replace: true });
       } else {
-        toast.error("Lien invalide ou erreur de connexion au match");
+        toast.error("Lien invalide ou erreur de connexion à l'événement");
       }
     };
 
@@ -509,9 +509,9 @@ export function Fives() {
       <div className="pb-20">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-text-primary">Mes Matchs</h1>
+          <h1 className="text-2xl font-bold text-text-primary">Mes Événements</h1>
           <p className="text-sm text-text-tertiary">
-            Créez et gérez vos matchs
+            Créez et gérez vos événements sportifs
           </p>
         </div>
 
@@ -539,7 +539,7 @@ export function Fives() {
                   d="M12 4v16m8-8H4"
                 />
               </svg>
-              Créer un match
+              Créer un événement
             </button>
             <button
               onClick={() => setShowJoinModal(true)}
@@ -617,10 +617,10 @@ export function Fives() {
                   </svg>
                 </div>
                 <p className="mb-2 font-semibold text-text-primary">
-                  Aucun match
+                  Aucun événement
                 </p>
                 <p className="text-sm text-text-tertiary">
-                  Créez votre premier match ou rejoignez-en un avec un code
+                  Créez votre premier événement ou rejoignez-en un avec un code
                 </p>
               </div>
             ) : (
@@ -887,7 +887,7 @@ export function Fives() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
             <div className="w-full max-w-md rounded-lg border border-border-primary bg-bg-modal p-6 shadow-2xl">
               <h2 className="mb-4 text-xl font-bold text-text-primary">
-                Créer un match
+                Créer un événement
               </h2>
               <form onSubmit={handleCreateFive} className="space-y-4">
                 <div>
@@ -1075,12 +1075,12 @@ export function Fives() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
             <div className="w-full max-w-md rounded-lg border border-border-primary bg-bg-modal p-6 shadow-2xl">
               <h2 className="mb-4 text-xl font-bold text-text-primary">
-                Rejoindre un match
+                Rejoindre un événement
               </h2>
               <form onSubmit={handleJoinByCode} className="space-y-4">
                 <div>
                   <label className="mb-1 block text-sm text-text-tertiary">
-                    Code du match
+                    Code de l'événement
                   </label>
                   <input
                     type="text"
@@ -1092,7 +1092,7 @@ export function Fives() {
                     className="w-full rounded-lg border border-border-primary bg-bg-secondary px-4 py-2 text-center font-mono uppercase tracking-widest text-text-primary focus:border-red-500 focus:outline-none transition-colors"
                   />
                   <p className="mt-2 text-xs text-text-tertiary">
-                    Demandez le code au créateur du match
+                    Demandez le code au créateur de l'événement
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -1125,7 +1125,7 @@ export function Fives() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
             <div className="w-full max-w-md rounded-lg border border-border-primary bg-bg-modal p-6 shadow-2xl">
               <h2 className="mb-4 text-xl font-bold text-text-primary">
-                Modifier le match
+                Modifier l'événement
               </h2>
               <form onSubmit={handleEditFive} className="space-y-4">
                 <div>
@@ -1340,7 +1340,7 @@ export function Fives() {
                   </svg>
                 </div>
                 <h2 className="mb-2 text-xl font-bold text-text-primary">
-                  Match créé !
+                  Événement créé !
                 </h2>
                 <p className="text-sm text-text-tertiary">
                   Partagez ce lien avec vos amis
@@ -1368,11 +1368,11 @@ export function Fives() {
                 </div>
                 <div className="mb-3 overflow-hidden rounded-lg border border-red-500/30 bg-bg-modal/50 px-3 py-3">
                   <span className="block break-all text-sm text-text-primary">
-                    {buildShareLink(fiveToShare.share_code)}
+                    {buildEventLink(fiveToShare.id)}
                   </span>
                 </div>
                 <button
-                  onClick={() => handleCopyShareLink(fiveToShare.share_code)}
+                  onClick={() => handleCopyShareLink(fiveToShare.id)}
                   className="w-full rounded-lg bg-red-500 px-4 py-3 text-sm font-semibold text-white hover:bg-red-600"
                 >
                   <div className="flex items-center justify-center gap-2">
@@ -1394,7 +1394,7 @@ export function Fives() {
                 </button>
                 <p className="mt-3 text-xs text-text-tertiary">
                   Toute personne connectée avec ce lien rejoindra
-                  automatiquement le match.
+                  automatiquement l'événement.
                 </p>
               </div>
 
@@ -1689,7 +1689,7 @@ export function Fives() {
                   <div className="space-y-3">
                     <div>
                       <p className="text-sm font-semibold text-text-primary mb-1">
-                        Partager le match
+                        Partager l'événement
                       </p>
                       <p className="text-xs text-text-tertiary">
                         Lien direct ou code unique, prêt à copier.
@@ -1699,12 +1699,12 @@ export function Fives() {
                       <div className="flex items-center gap-2 rounded-lg border border-border-primary bg-bg-secondary px-3 py-2">
                         <div className="flex-1 overflow-hidden text-xs text-text-secondary">
                           <span className="block truncate">
-                            {buildShareLink(selectedFive.share_code)}
+                            {buildEventLink(selectedFive.id)}
                           </span>
                         </div>
                         <button
                           onClick={() =>
-                            handleCopyShareLink(selectedFive.share_code)
+                            handleCopyShareLink(selectedFive.id)
                           }
                           className="rounded-md bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-600 transition-colors"
                         >
@@ -1973,7 +1973,7 @@ export function Fives() {
                                               d="M6 18L18 6M6 6l12 12"
                                             />
                                           </svg>
-                                          Retirer du match
+                                          Retirer de l'événement
                                         </button>
                                       </div>
                                     )}
@@ -2120,7 +2120,7 @@ export function Fives() {
                                             d="M6 18L18 6M6 6l12 12"
                                           />
                                         </svg>
-                                        Retirer du match
+                                        Retirer de l'événement
                                       </button>
                                     </div>
                                   )}
@@ -2479,7 +2479,7 @@ export function Fives() {
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div className="text-xs text-text-tertiary">
                     {selectedFive.isFull
-                      ? "Le match est complet, vous rejoindrez la liste d'attente."
+                      ? "L'événement est complet, vous rejoindrez la liste d'attente."
                       : "Les places se remplissent vite, agissez maintenant."}
                   </div>
                   <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row">
@@ -2488,7 +2488,7 @@ export function Fives() {
                         disabled
                         className="w-full rounded-lg bg-bg-secondary px-4 py-2 text-sm font-medium text-text-tertiary cursor-not-allowed md:min-w-[180px]"
                       >
-                        Ce match est terminé
+                        Cet événement est terminé
                       </button>
                     ) : selectedFive.isCreator || isAdmin ? (
                       <>
@@ -2512,7 +2512,7 @@ export function Fives() {
                               setShowEditModal(true);
                             }}
                             className="w-full rounded-lg border border-border-primary bg-bg-secondary px-4 py-2 text-sm font-medium text-text-primary hover:bg-bg-hover transition-colors md:min-w-[200px]"
-                            title="Modifier le match (Admin)"
+                            title="Modifier l'événement (Admin)"
                           >
                             Modifier (Admin)
                           </button>
@@ -2525,7 +2525,7 @@ export function Fives() {
                                 setShowDeleteModal(true);
                               }}
                               className="w-full rounded-lg border border-red-500 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors md:min-w-[52px]"
-                              title="Supprimer le match"
+                              title="Supprimer l'événement"
                             >
                               Supprimer
                             </button>
@@ -2537,7 +2537,7 @@ export function Fives() {
                                 setShowDeleteModal(true);
                               }}
                               className="w-full rounded-lg border border-red-500 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors md:min-w-[200px]"
-                              title="Supprimer le match (Admin)"
+                              title="Supprimer l'événement (Admin)"
                             >
                               Supprimer (Admin)
                             </button>
@@ -2554,7 +2554,7 @@ export function Fives() {
                       >
                         {selectedFive.isUserSubstitute
                           ? "Se retirer de la liste d'attente"
-                          : "Se retirer du match"}
+                          : "Se retirer de l'événement"}
                       </button>
                     ) : (
                       <button
@@ -2570,7 +2570,7 @@ export function Fives() {
                       >
                         {selectedFive.isFull
                           ? "Rejoindre comme remplaçant"
-                          : "Rejoindre le match"}
+                          : "Rejoindre l'événement"}
                       </button>
                     )}
                   </div>
@@ -2601,14 +2601,14 @@ export function Fives() {
                   </svg>
                 </div>
                 <h2 className="mb-2 text-xl font-bold text-text-primary">
-                  Se retirer du match ?
+                  Se retirer de l'événement ?
                 </h2>
                 <p className="text-sm text-text-tertiary">
                   Vous êtes sur le point de vous retirer de "{fiveToLeave.title}
                   ".
                 </p>
                 <p className="mt-2 text-sm text-text-tertiary">
-                  Vous pourrez rejoindre à nouveau ce match tant qu'il n'est pas
+                  Vous pourrez rejoindre à nouveau cet événement tant qu'il n'est pas
                   complet.
                 </p>
               </div>
@@ -2657,7 +2657,7 @@ export function Fives() {
                   </svg>
                 </div>
                 <h2 className="mb-2 text-xl font-bold text-text-primary">
-                  Supprimer le match ?
+                  Supprimer l'événement ?
                 </h2>
                 <p className="text-sm text-text-tertiary">
                   Vous êtes sur le point de supprimer "{fiveToDelete.title}".
@@ -2722,10 +2722,10 @@ export function Fives() {
                       participantToRemove.user.last_name
                     )}
                   </span>{" "}
-                  du match.
+                  de l'événement.
                 </p>
                 <p className="mt-2 text-sm text-text-tertiary">
-                  Cette personne pourra rejoindre à nouveau le match si elle le
+                  Cette personne pourra rejoindre à nouveau l'événement si elle le
                   souhaite.
                 </p>
               </div>
@@ -2860,7 +2860,7 @@ export function Fives() {
                       ? ` ${guestToRemove.last_name}`
                       : ""}
                   </span>{" "}
-                  du match.
+                  de l'événement.
                 </p>
                 <p className="mt-2 text-sm text-text-tertiary">
                   Cette personne devra être ajoutée à nouveau manuellement si

@@ -234,9 +234,9 @@ export const useFiveStore = create<FiveStore>((set, get) => ({
           title: payload.title,
           location: payload.location,
           date: payload.date,
-          max_players: payload.maxPlayers,
-          duration_minutes: payload.durationMinutes,
-        } as Partial<Five>,
+          maxPlayers: payload.maxPlayers,
+          durationMinutes: payload.durationMinutes,
+        },
         userId
       );
 

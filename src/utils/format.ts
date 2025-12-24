@@ -36,6 +36,11 @@ export function buildShareLink(shareCode: string, origin?: string) {
   return `${base}/fives?shareCode=${shareCode}`;
 }
 
+export function buildEventLink(eventId: string, origin?: string) {
+  const base = origin || (typeof window !== 'undefined' ? window.location.origin : '');
+  return `${base}/evenement/${eventId}`;
+}
+
 export function formatUserName(firstName: string | null, lastName: string | null) {
   if (!firstName && !lastName) return 'Utilisateur';
   if (!firstName) return lastName || 'Utilisateur';

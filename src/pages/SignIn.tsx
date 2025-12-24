@@ -14,7 +14,7 @@ export function SignIn() {
           <img src="/strive-logo.svg" alt="Stryver" className="h-16 w-16 rounded-xl bg-slate-900 shadow-lg" />
         </div>
         <h1 className="text-3xl font-bold text-text-primary">Stryver</h1>
-        <p className="mt-2 text-text-secondary">Organisez facilement vos matchs, événements ou sessions</p>
+        <p className="mt-2 text-text-secondary">Organisez facilement vos événements sportifs</p>
       </div>
       <ClerkSignIn
         appearance={{

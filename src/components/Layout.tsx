@@ -62,7 +62,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
     setMeta('property', 'og:url', canonicalUrl);
     setMeta('name', 'twitter:url', canonicalUrl);
-    document.title = 'Stryver | Organisez vos matchs de five';
+    document.title = 'Stryver | Organisez vos événements sportifs';
   }, [location]);
 
   const gradient =
