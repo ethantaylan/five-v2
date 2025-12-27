@@ -357,6 +357,7 @@ export async function addGuestParticipant(
     first_name: firstName,
     last_name: lastName,
     is_substitute: isFull,
+    added_by: requesterId,
   });
 
   if (insertError) throw insertError;
