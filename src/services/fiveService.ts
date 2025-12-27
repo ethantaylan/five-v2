@@ -319,7 +319,7 @@ export async function fetchGuestParticipants(fiveId: string) {
     .select("*")
     .eq("five_id", fiveId)
     .order("is_substitute", { ascending: true })
-    .order("created_at", { ascending: true });
+    .order("added_at", { ascending: true });
 
   if (error) throw error;
   return (data as GuestParticipant[]) || [];
