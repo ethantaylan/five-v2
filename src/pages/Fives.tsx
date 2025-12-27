@@ -85,7 +85,7 @@ export function Fives() {
   const [showLocationPopover, setShowLocationPopover] = useState<string | null>(
     null
   );
-  const [activeTab, setActiveTab] = useState<"participants" | "chat">(
+  const [detailsTab, setDetailsTab] = useState<"participants" | "chat">(
     "participants"
   );
   const [openParticipantMenu, setOpenParticipantMenu] = useState<string | null>(
@@ -1734,9 +1734,9 @@ export function Fives() {
                 <div className="rounded-lg bg-bg-secondary p-1 text-sm font-medium">
                   <div className="grid grid-cols-2 gap-1">
                     <button
-                      onClick={() => setActiveTab("participants")}
+                      onClick={() => setDetailsTab("participants")}
                       className={`flex items-center justify-center gap-2 rounded-md px-4 py-2 transition-colors ${
-                        activeTab === "participants"
+                        detailsTab === "participants"
                           ? "bg-red-500 text-white"
                           : "text-text-tertiary hover:text-text-primary"
                       }`}
@@ -1750,16 +1750,16 @@ export function Fives() {
                       </svg>
                       <span>Participants</span>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-xs ${activeTab === "participants" ? "bg-white/20" : "bg-bg-tertiary"}`}
+                        className={`rounded-full px-2 py-0.5 text-xs ${detailsTab === "participants" ? "bg-white/20" : "bg-bg-tertiary"}`}
                       >
                         {(selectedFive.participantCount || 0) +
                           (selectedFive.guestCount || 0)}
                       </span>
                     </button>
                     <button
-                      onClick={() => setActiveTab("chat")}
+                      onClick={() => setDetailsTab("chat")}
                       className={`flex items-center justify-center gap-2 rounded-md px-4 py-2 transition-colors ${
-                        activeTab === "chat"
+                        detailsTab === "chat"
                           ? "bg-red-500 text-white"
                           : "text-text-tertiary hover:text-text-primary"
                       }`}
@@ -1783,7 +1783,7 @@ export function Fives() {
                 </div>
 
                 {/* Tab Content */}
-                {activeTab === "participants" ? (
+                {detailsTab === "participants" ? (
                   <div className="space-y-3 rounded-lg border border-border-primary bg-bg-card p-4">
                     <div className="flex items-center justify-between gap-2 pb-3 border-b border-border-primary">
                       <div className="flex items-center gap-2">
