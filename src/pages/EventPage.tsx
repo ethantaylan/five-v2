@@ -6,10 +6,12 @@ import { Layout } from '../components/Layout';
 import { fetchFiveById, joinFive } from '../services/fiveService';
 import { formatDate, formatDuration } from '../utils/format';
 import type { FiveWithDetails } from '../types/database';
+import { useUserStore } from '../stores/useUserStore';
 
 export function EventPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useUser();
+  const { user: dbUser } = useUserStore();
   const navigate = useNavigate();
   const [event, setEvent] = useState<FiveWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,7 +26,7 @@ export function EventPage() {
 
       try {
         // Si l'utilisateur n'est pas connecté, on charge quand même les données pour les meta tags
-        const userId = user?.id || 'anonymous';
+        const userId = dbUser?.id || 'anonymous';
         const eventData = await fetchFiveById(id, userId);
 
         if (!eventData) {
@@ -71,10 +73,14 @@ export function EventPage() {
 
   const handleJoinEvent = async () => {
     if (!user || !event) return;
+    if (!dbUser) {
+      toast.error("Impossible de rejoindre l'événement. Veuillez réessayer.");
+      return;
+    }
 
     setIsJoining(true);
     try {
-      await joinFive(event.id, user.id);
+      await joinFive(event.id, dbUser.id);
       const isFull = event.isFull;
 
       if (isFull) {
